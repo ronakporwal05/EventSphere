@@ -1,0 +1,22 @@
+package com.eventsphere.venue.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.Instant;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class RoomResponse {
+    private String id;
+    private String venueId;
+    private String name;
+    private int capacity;
+    private String floorLevel;
+    private String equipmentNotes;
+    private Instant createdAt;
+}

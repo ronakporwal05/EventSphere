@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: eventsphere-backend
+  profiles:
+    active: dev
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:${SPRING_REDIS_HOST:localhost}}
+      port: ${SPRING_DATA_REDIS_PORT:${SPRING_REDIS_PORT:6379}}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+eventsphere:
+  jwt:
+    secret: 9a2f8c7e6b5a4d3c2b1a0f9e8d7c6b5a4d3c2b1a0f9e8d7c6b5a4d3c2b1a0f9e8d7c6b5a4d3c2b1a0f9e8d7c6b5a4d3c
+    expiration-ms: 900000 # 15 minutes
+    refresh-expiration-ms: 604800000 # 7 days
+  security:
+    max-failed-attempts: 5
+    lock-duration-ms: 1800000 # 30 minutes
+  gemini:
+    api-key: ${GEMINI_API_KEY:}
+    llm-model: gemini-1.5-flash
+    embedding-model: text-embedding-004
+    base-url: https://generativelanguage.googleapis.com/v1beta
