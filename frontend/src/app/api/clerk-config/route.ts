@@ -25,28 +25,31 @@ export async function POST(req: NextRequest) {
       `NEXT_PUBLIC_CLERK_SIGN_UP_URL=/register`,
     ].filter(Boolean).join('\n');
 
-    // Update .env.local in frontend
-    let currentLocal = '';
-    if (fs.existsSync(envLocalPath)) {
-      currentLocal = fs.readFileSync(envLocalPath, 'utf-8');
-    }
-    // Remove old clerk lines
-    const cleanLocal = currentLocal
-      .split('\n')
-      .filter((l) => !l.startsWith('NEXT_PUBLIC_CLERK_') && !l.startsWith('CLERK_SECRET_KEY='))
-      .join('\n')
-      .trim();
-    fs.writeFileSync(envLocalPath, `${cleanLocal}\n\n# Clerk Authentication\n${clerkLines}\n`, 'utf-8');
-
-    // Update root .env if it exists
-    if (fs.existsSync(rootEnvPath)) {
-      let rootEnv = fs.readFileSync(rootEnvPath, 'utf-8');
-      const cleanRoot = rootEnv
+    // Update .env files if running in local environment (safely ignored in read-only serverless environments like Vercel)
+    try {
+      let currentLocal = '';
+      if (fs.existsSync(envLocalPath)) {
+        currentLocal = fs.readFileSync(envLocalPath, 'utf-8');
+      }
+      const cleanLocal = currentLocal
         .split('\n')
         .filter((l) => !l.startsWith('NEXT_PUBLIC_CLERK_') && !l.startsWith('CLERK_SECRET_KEY='))
         .join('\n')
         .trim();
-      fs.writeFileSync(rootEnvPath, `${cleanRoot}\n\n# Clerk Authentication\n${clerkLines}\n`, 'utf-8');
+      fs.writeFileSync(envLocalPath, `${cleanLocal}\n\n# Clerk Authentication\n${clerkLines}\n`, 'utf-8');
+
+      if (fs.existsSync(rootEnvPath)) {
+        let rootEnv = fs.readFileSync(rootEnvPath, 'utf-8');
+        const cleanRoot = rootEnv
+          .split('\n')
+          .filter((l) => !l.startsWith('NEXT_PUBLIC_CLERK_') && !l.startsWith('CLERK_SECRET_KEY='))
+          .join('\n')
+          .trim();
+        fs.writeFileSync(rootEnvPath, `${cleanRoot}\n\n# Clerk Authentication\n${clerkLines}\n`, 'utf-8');
+      }
+    } catch (fsErr) {
+      // Serverless environments like Vercel have a read-only filesystem; environment variables are managed via dashboard
+      console.warn('Filesystem write skipped in serverless environment:', fsErr);
     }
 
     return NextResponse.json({
