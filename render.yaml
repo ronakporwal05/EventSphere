@@ -1,26 +1,53 @@
 services:
+  # 1. EventSphere Spring Boot Backend
   - type: web
-    name: eventsphere-api
-    env: docker
+    name: eventsphere-backend
+    runtime: docker
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
+    plan: free
     region: oregon
-    plan: starter
     healthCheckPath: /actuator/health
     envVars:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
-      - key: DATABASE_URL
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_DATASOURCE_URL
         sync: false
-      - key: DATABASE_USER
+      - key: SPRING_DATASOURCE_USERNAME
         sync: false
-      - key: DATABASE_PASSWORD
+      - key: SPRING_DATASOURCE_PASSWORD
         sync: false
-      - key: REDIS_HOST
+      - key: SPRING_DATA_REDIS_HOST
         sync: false
-      - key: REDIS_PORT
+      - key: SPRING_DATA_REDIS_PORT
         sync: false
-      - key: QDRANT_HOST
+      - key: SPRING_DATA_REDIS_PASSWORD
         sync: false
-      - key: JWT_SECRET
-        generateValue: true
+      - key: SPRING_DATA_REDIS_SSL_ENABLED
+        value: "true"
+      - key: EVENTSPHERE_RAZORPAY_KEY_ID
+        value: rzp_test_TsolyDOFVBcgLq
+      - key: EVENTSPHERE_RAZORPAY_KEY_SECRET
+        value: 49LGSbQeYnyMQDZdKprAOtFu
+      - key: EVENTSPHERE_ML_SERVICE_URL
+        fromService:
+          type: web
+          name: eventsphere-ml-service
+          property: host
+      - key: GEMINI_API_KEY
+        sync: false
+
+  # 2. EventSphere ML Intelligence Microservice
+  - type: web
+    name: eventsphere-ml-service
+    runtime: docker
+    dockerfilePath: ./ml-service/Dockerfile
+    dockerContext: ./ml-service
+    plan: free
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
