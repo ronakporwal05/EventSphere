@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ConferioTicker } from '@/features/conferio/components/ConferioTicker';
 import { ConferioNavbar } from '@/features/conferio/components/ConferioNavbar';
@@ -12,6 +12,7 @@ import { FLAGSHIP_EVENT } from '@/features/conferio/data/flagship';
 import { InteractiveSeatMap, SelectedSeat } from '@/features/tickets/components/InteractiveSeatMap';
 import { PaymentGatewayModal } from '@/features/tickets/components/PaymentGatewayModal';
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
+import { getCustomEvents, CustomEventItem } from '@/lib/custom-events';
 import {
   Search,
   MapPin,
@@ -32,8 +33,8 @@ interface EventCardItem {
   id: string;
   title: string;
   tagline: string;
-  category: 'Tech & AI' | 'Developer Summit' | 'Music & Festival' | 'Business' | 'Design & UX';
-  city: 'London' | 'Bengaluru' | 'San Francisco' | 'Tokyo' | 'Berlin' | 'Virtual';
+  category: string;
+  city: string;
   venue: string;
   startDate: string;
   dayBadge: string;
@@ -43,6 +44,7 @@ interface EventCardItem {
   attendeesCount: number;
   imageUrl: string;
   featured?: boolean;
+  isCustom?: boolean;
 }
 
 const EVENTS_CATALOG: EventCardItem[] = [
@@ -146,6 +148,23 @@ export default function FindEventsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [priceFilter, setPriceFilter] = useState<'All' | 'Free' | 'Paid'>('All');
 
+  // All events including custom created ones
+  const [allEvents, setAllEvents] = useState<EventCardItem[]>(EVENTS_CATALOG);
+
+  useEffect(() => {
+    const custom = getCustomEvents();
+    if (custom.length > 0) {
+      setAllEvents([...(custom as EventCardItem[]), ...EVENTS_CATALOG]);
+    }
+
+    const handleSync = () => {
+      const updatedCustom = getCustomEvents();
+      setAllEvents([...(updatedCustom as EventCardItem[]), ...EVENTS_CATALOG]);
+    };
+    window.addEventListener('eventsphere_events_updated', handleSync);
+    return () => window.removeEventListener('eventsphere_events_updated', handleSync);
+  }, []);
+
   // Interactive booking & seat map states
   const [activeBookingEvent, setActiveBookingEvent] = useState<EventCardItem | null>(null);
   const [isSeatMapOpen, setIsSeatMapOpen] = useState(false);
@@ -246,9 +265,9 @@ export default function FindEventsPage() {
   };
 
   // Filter logic
-  const filteredEvents = EVENTS_CATALOG.filter((evt) => {
-    if (selectedCity !== 'All' && evt.city !== selectedCity) return false;
-    if (selectedCategory !== 'All' && evt.category !== selectedCategory) return false;
+  const filteredEvents = allEvents.filter((evt) => {
+    if (selectedCity !== 'All' && evt.city.toLowerCase() !== selectedCity.toLowerCase()) return false;
+    if (selectedCategory !== 'All' && evt.category.toLowerCase() !== selectedCategory.toLowerCase()) return false;
     if (priceFilter === 'Free' && evt.price > 0) return false;
     if (priceFilter === 'Paid' && evt.price === 0) return false;
     if (
@@ -441,9 +460,17 @@ export default function FindEventsPage() {
                         />
                       </button>
 
-                      {/* Category Pill */}
-                      <div className="absolute bottom-3 left-3 px-2.5 py-0.5 bg-black text-[#f5ce32] rounded text-[10px] font-black uppercase border border-black pointer-events-none">
-                        {event.category}
+                      {/* Category Pill & Custom Summit Badge */}
+                      <div className="absolute bottom-3 left-3 flex items-center space-x-1.5 pointer-events-none">
+                        <span className="px-2.5 py-0.5 bg-black text-[#f5ce32] rounded text-[10px] font-black uppercase border border-black shadow-[1px_1px_0px_#fff]">
+                          {event.category}
+                        </span>
+                        {event.isCustom && (
+                          <span className="px-2 py-0.5 bg-emerald-400 text-black rounded text-[10px] font-black uppercase border border-black shadow-[1px_1px_0px_#000] flex items-center space-x-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                            <span>ORGANIZER</span>
+                          </span>
+                        )}
                       </div>
 
                       {/* Price Pill */}

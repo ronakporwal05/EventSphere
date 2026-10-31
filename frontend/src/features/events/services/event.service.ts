@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/api-client';
 import { EventItem, EventQueryParams, CreateEventInput } from '../types/event.types';
+import { getCustomEvents, getCustomEventById, CustomEventItem } from '@/lib/custom-events';
 
 export const eventService = {
   getEvents: async (params: EventQueryParams): Promise<{ events: EventItem[]; total: number }> => {
@@ -96,6 +97,45 @@ export const eventService = {
   },
 
   getEventById: async (id: string): Promise<EventItem> => {
+    // 1. Check custom created events first
+    const custom = getCustomEventById(id);
+    if (custom) {
+      return {
+        id: custom.id,
+        title: custom.title,
+        description: custom.description || custom.tagline,
+        category: custom.category,
+        status: custom.status,
+        startDate: custom.startDate,
+        endDate: custom.endDate || custom.startDate,
+        location: `${custom.venue}, ${custom.city}`,
+        isVirtual: custom.eventType === 'VIRTUAL',
+        virtualLink: custom.eventType === 'VIRTUAL' ? 'https://stream.eventsphere.ai/live' : undefined,
+        capacity: custom.capacity,
+        registeredCount: custom.attendeesCount,
+        organizerName: 'Event Sphere AI',
+        tags: [custom.category, custom.city],
+        createdAt: custom.createdAt,
+        coverImageUrl: custom.imageUrl,
+        ticketTiers: [
+          {
+            id: `tier-std-${custom.id}`,
+            name: 'Standard Attendee',
+            price: custom.price,
+            capacity: Math.round(custom.capacity * 0.7),
+            available: Math.max(0, Math.round(custom.capacity * 0.7) - custom.attendeesCount),
+          },
+          {
+            id: `tier-vip-${custom.id}`,
+            name: 'VIP All-Access Pass',
+            price: custom.vipPrice || custom.price * 2,
+            capacity: Math.round(custom.capacity * 0.3),
+            available: Math.round(custom.capacity * 0.3),
+          },
+        ],
+      } as any;
+    }
+
     try {
       const response = await apiClient.get(`/events/${id}`);
       return response.data.data;

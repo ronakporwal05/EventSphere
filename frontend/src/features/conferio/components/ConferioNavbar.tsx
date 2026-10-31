@@ -171,33 +171,31 @@ export const ConferioNavbar: React.FC<ConferioNavbarProps> = ({
           </Link>
         )}
 
-        {/* EVENT MANAGER & ADMIN TABS — Hidden from Public & Normal User */}
+        {/* ORGANIZER COCKPIT & CREATE EVENT — Visible for instant access */}
+        <Link
+          href="/manage"
+          className="flex items-center space-x-1 px-2.5 py-1 bg-white hover:bg-neutral-100 text-black border-2 border-black rounded-lg text-xs font-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+        >
+          <LayoutDashboard className="w-3.5 h-3.5 text-black" />
+          <span>Cockpit</span>
+        </Link>
+
+        <Link
+          href="/events/create"
+          className="flex items-center space-x-1 px-2.5 py-1 bg-[#f5ce32] hover:bg-yellow-400 text-black border-2 border-black rounded-lg text-xs font-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
+        >
+          <Plus className="w-3.5 h-3.5 text-black stroke-[3]" />
+          <span>Create Event</span>
+        </Link>
+
         {canAccessManagerTabs && (
-          <>
-            <Link
-              href="/manage"
-              className="flex items-center space-x-1 px-2.5 py-1 bg-white hover:bg-neutral-100 text-black border-2 border-black rounded-lg text-xs font-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5 text-black" />
-              <span>Cockpit</span>
-            </Link>
-
-            <Link
-              href="/events/create"
-              className="flex items-center space-x-1 px-2.5 py-1 bg-white hover:bg-neutral-100 text-black border-2 border-black rounded-lg text-xs font-black shadow-[2px_2px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] transition-all"
-            >
-              <Plus className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" />
-              <span>Create Event</span>
-            </Link>
-
-            <Link
-              href="/ai-studio"
-              className="flex items-center space-x-1.5 px-3 py-1 bg-black text-[#f5ce32] rounded-full text-xs font-black tracking-wider hover:bg-neutral-800 transition-colors shadow-[2px_2px_0px_#000]"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>AI Studio</span>
-            </Link>
-          </>
+          <Link
+            href="/ai-studio"
+            className="flex items-center space-x-1.5 px-3 py-1 bg-black text-[#f5ce32] rounded-full text-xs font-black tracking-wider hover:bg-neutral-800 transition-colors shadow-[2px_2px_0px_#000]"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>AI Studio</span>
+          </Link>
         )}
 
         {/* ADMIN EXCLUSIVE TAB — Hidden from Event Manager, User, and Public */}
@@ -619,15 +617,13 @@ export const ConferioNavbar: React.FC<ConferioNavbarProps> = ({
           </div>
 
           <div className="pt-2 border-t-2 border-black flex items-center gap-2">
-            {canAccessManagerTabs ? (
-              <Link
-                href="/events/create"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex-1 py-3 bg-white hover:bg-neutral-50 text-black border-2 border-black rounded-xl font-black text-xs uppercase text-center shadow-[3px_3px_0px_#000]"
-              >
-                + Create Event
-              </Link>
-            ) : null}
+            <Link
+              href="/events/create"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex-1 py-3 bg-white hover:bg-neutral-50 text-black border-2 border-black rounded-xl font-black text-xs uppercase text-center shadow-[3px_3px_0px_#000]"
+            >
+              + Create Event
+            </Link>
             <button
               onClick={handleBuyTicket}
               className="flex-1 py-3 bg-black hover:bg-neutral-800 text-[#f5ce32] border-2 border-black rounded-xl font-black text-xs uppercase text-center shadow-[3px_3px_0px_#fff]"

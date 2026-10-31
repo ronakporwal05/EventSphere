@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ConferioTicker } from '@/features/conferio/components/ConferioTicker';
 import { ConferioNavbar } from '@/features/conferio/components/ConferioNavbar';
@@ -8,6 +8,7 @@ import { ConferioFooter } from '@/features/conferio/components/ConferioFooter';
 import { ClerkAuthModal, AuthModalMode } from '@/features/auth/components/ClerkAuthModal';
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
 import { hasHierarchyAccess, resolveHierarchyRole } from '@/features/auth/utils/hierarchy';
+import { getCustomEvents, deleteCustomEvent, CustomEventItem } from '@/lib/custom-events';
 import {
   Users,
   DollarSign,
@@ -30,6 +31,12 @@ import {
   Lock,
   Crown,
   Briefcase,
+  Trash2,
+  ExternalLink,
+  Copy,
+  Calendar,
+  MapPin,
+  Building,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -132,6 +139,35 @@ export default function OrganizerDashboardPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [tierFilter, setTierFilter] = useState<'ALL' | 'VIP All-Access' | 'Executive' | 'Attendee'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'CHECKED_IN' | 'PENDING'>('ALL');
+
+  // Hosted custom events
+  const [customEvents, setCustomEvents] = useState<CustomEventItem[]>([]);
+
+  useEffect(() => {
+    setCustomEvents(getCustomEvents());
+
+    const handleSync = () => {
+      setCustomEvents(getCustomEvents());
+    };
+    window.addEventListener('eventsphere_events_updated', handleSync);
+    return () => window.removeEventListener('eventsphere_events_updated', handleSync);
+  }, []);
+
+  const handleDeleteCustomEvent = (id: string, eventTitle: string) => {
+    if (confirm(`Are you sure you want to delete "${eventTitle}"?`)) {
+      const remaining = deleteCustomEvent(id);
+      setCustomEvents(remaining);
+      toast.success(`Event "${eventTitle}" deleted.`);
+    }
+  };
+
+  const handleCopyEventLink = (id: string) => {
+    if (typeof window !== 'undefined') {
+      const url = `${window.location.origin}/events/${id}`;
+      navigator.clipboard?.writeText(url);
+      toast.success('Public Event link copied to clipboard!');
+    }
+  };
 
   // Auth modal state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -392,6 +428,164 @@ export default function OrganizerDashboardPage() {
               Confidence Index: ±1.2% (Qdrant model)
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* 4.5. Hosted Events & Summits (Organizer Cockpit) */}
+      <section id="my-events" className="py-6 px-4 sm:px-8 max-w-6xl mx-auto w-full">
+        <div className="bg-white border-3 border-black rounded-3xl p-6 sm:p-8 shadow-[6px_6px_0px_#000] space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b-2 border-black">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="px-2.5 py-0.5 bg-[#f5ce32] text-black text-[10px] font-black uppercase rounded border border-black inline-block">
+                  ORGANIZER PORTFOLIO
+                </span>
+                <span className="text-xs font-black text-neutral-500 font-mono">
+                  {customEvents.length} {customEvents.length === 1 ? 'SUMMIT' : 'SUMMITS'} PUBLISHED
+                </span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black uppercase text-black tracking-tight mt-1">
+                YOUR HOSTED EVENTS & SUMMITS
+              </h2>
+              <p className="text-xs text-neutral-600 font-medium">
+                Manage your live summits, view attendee registrations, copy public ticket links, and launch turnstiles.
+              </p>
+            </div>
+
+            <Link
+              href="/events/create"
+              className="px-4 py-2.5 bg-[#f5ce32] hover:bg-yellow-400 text-black border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center space-x-1.5 shrink-0 self-start sm:self-auto"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>Create Another Event</span>
+            </Link>
+          </div>
+
+          {customEvents.length === 0 ? (
+            <div className="p-8 border-2 border-dashed border-neutral-300 rounded-2xl text-center space-y-3 bg-neutral-50">
+              <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-100 border-2 border-black flex items-center justify-center text-amber-700">
+                <Building className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-black uppercase text-black">No Custom Events Yet</h3>
+              <p className="text-xs text-neutral-600 max-w-md mx-auto">
+                You haven&apos;t created any summits yet. Launch your first event with AI-generated copy and dynamic ticketing in under 60 seconds.
+              </p>
+              <Link
+                href="/events/create"
+                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-black text-[#f5ce32] border-2 border-black rounded-xl text-xs font-black uppercase shadow-[2px_2px_0px_#000]"
+              >
+                <Plus className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Create Your First Event</span>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {customEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-[#fbfbf9] border-2 border-black rounded-2xl overflow-hidden shadow-[4px_4px_0px_#000] flex flex-col hover:-translate-y-0.5 transition-all"
+                >
+                  {/* Image & Badges */}
+                  <div className="relative h-44 w-full border-b-2 border-black overflow-hidden bg-neutral-900">
+                    <img
+                      src={event.imageUrl}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2.5 left-2.5 flex flex-wrap gap-1.5">
+                      <span className="px-2 py-0.5 bg-black text-[#f5ce32] text-[10px] font-black uppercase rounded border border-black shadow-[1px_1px_0px_#fff]">
+                        {event.category}
+                      </span>
+                      <span className="px-2 py-0.5 bg-emerald-400 text-black text-[10px] font-black uppercase rounded border border-black shadow-[1px_1px_0px_#000] flex items-center space-x-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-black animate-pulse" />
+                        <span>LIVE SUMMIT</span>
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-2.5 right-2.5 bg-white border-2 border-black rounded-lg px-2 py-1 text-center shadow-[2px_2px_0px_#000]">
+                      <span className="block text-[10px] font-black uppercase text-neutral-500 leading-none">
+                        {event.monthBadge}
+                      </span>
+                      <span className="block text-base font-black text-black leading-none mt-0.5">
+                        {event.dayBadge}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
+                    <div>
+                      <h3 className="text-base font-black uppercase text-black tracking-tight line-clamp-1">
+                        {event.title}
+                      </h3>
+                      <p className="text-xs text-neutral-600 line-clamp-2 mt-1 font-medium">
+                        {event.tagline}
+                      </p>
+
+                      <div className="mt-3 space-y-1.5 text-xs text-neutral-700 font-bold">
+                        <div className="flex items-center space-x-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                          <span className="truncate">{event.venue}, {event.city}</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                          <span className="truncate">{event.startDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats & Actions */}
+                    <div className="pt-3 border-t-2 border-black/10 space-y-3">
+                      <div className="flex items-center justify-between text-xs font-black">
+                        <span className="text-emerald-700">
+                          {event.price === 0 ? 'FREE ENTRY' : `₹${event.price.toLocaleString()} General`}
+                        </span>
+                        <span className="text-neutral-500 font-mono text-[11px]">
+                          Cap: {event.capacity} seats
+                        </span>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link
+                          href={`/events/${event.id}`}
+                          className="px-2.5 py-1.5 bg-black hover:bg-neutral-800 text-[#f5ce32] border-2 border-black rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center justify-center space-x-1 shadow-[2px_2px_0px_#000]"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>View Page</span>
+                        </Link>
+                        <button
+                          onClick={() => handleCopyEventLink(event.id)}
+                          className="px-2.5 py-1.5 bg-white hover:bg-neutral-100 text-black border-2 border-black rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center justify-center space-x-1 shadow-[2px_2px_0px_#000]"
+                        >
+                          <Copy className="w-3 h-3 text-neutral-600" />
+                          <span>Copy Link</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <Link
+                          href="/scanner"
+                          className="text-[11px] font-black uppercase text-indigo-700 hover:underline flex items-center space-x-1"
+                        >
+                          <Scan className="w-3 h-3" />
+                          <span>Gate Turnstiles</span>
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteCustomEvent(event.id, event.title)}
+                          className="text-[11px] font-black uppercase text-rose-600 hover:underline flex items-center space-x-1"
+                          title="Delete Event"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

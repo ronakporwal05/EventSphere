@@ -28,6 +28,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getCustomEventById } from '@/lib/custom-events';
 
 export default function EventDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -36,6 +37,43 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
   const [activeTab, setActiveTab] = useState<'overview' | 'sessions' | 'passes'>('overview');
 
   useEffect(() => {
+    // 1. Direct local custom event lookup
+    const localCustom = getCustomEventById(resolvedParams.id);
+    if (localCustom) {
+      setEvent({
+        id: localCustom.id,
+        title: localCustom.title,
+        description: localCustom.description || localCustom.tagline,
+        category: localCustom.category,
+        startDate: localCustom.startDate,
+        endDate: localCustom.endDate || localCustom.startDate,
+        location: `${localCustom.venue}, ${localCustom.city}`,
+        status: localCustom.status,
+        capacity: localCustom.capacity,
+        currentAttendees: localCustom.attendeesCount,
+        isVirtual: localCustom.eventType === 'VIRTUAL',
+        coverImageUrl: localCustom.imageUrl,
+        ticketTiers: [
+          {
+            id: `tier-1-${localCustom.id}`,
+            name: 'General Admission',
+            price: localCustom.price,
+            capacity: localCustom.capacity,
+            available: localCustom.capacity - localCustom.attendeesCount,
+          },
+          {
+            id: `tier-2-${localCustom.id}`,
+            name: 'VIP Pass',
+            price: localCustom.vipPrice || localCustom.price * 2,
+            capacity: 200,
+            available: 180,
+          },
+        ],
+      } as any);
+      setLoading(false);
+      return;
+    }
+
     eventService
       .getEventById(resolvedParams.id)
       .then((res) => {

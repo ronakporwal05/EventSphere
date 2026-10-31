@@ -27,6 +27,8 @@ import {
   Briefcase,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { saveCustomEvent, formatEventDates, CustomEventItem } from '@/lib/custom-events';
+import { apiClient } from '@/lib/api-client';
 
 export default function CreateEventPage() {
   const router = useRouter();
@@ -95,28 +97,61 @@ export default function CreateEventPage() {
 
     setIsSubmitting(true);
     try {
-      await new Promise((r) => setTimeout(r, 900));
+      const dateInfo = formatEventDates(startDate, endDate);
 
-      // Save locally or dispatch to backend
-      const newEvent = {
-        id: `evt-${Date.now()}`,
-        title,
-        tagline: tagline || 'An unmissable industry summit.',
+      const newEvent: CustomEventItem = {
+        id: `evt-custom-${Date.now()}`,
+        title: title.trim(),
+        tagline: tagline.trim() || `The definitive ${category} summit of 2026.`,
+        description:
+          description.trim() ||
+          `Welcome to ${title.trim()} — the definitive ${category.toLowerCase()} summit of 2026. Bringing together keynote sessions, live architecture demos, and high-impact networking at ${venue} (${city}).`,
         category,
+        eventType,
         city,
         venue,
-        startDate,
-        endDate,
+        startDate: dateInfo.displayDate,
+        endDate: endDate || startDate,
+        dayBadge: dateInfo.dayBadge,
+        monthBadge: dateInfo.monthBadge,
         price: Number(generalPrice),
+        vipPrice: Number(vipPrice),
         capacity: Number(capacity),
         attendeesCount: 0,
-        imageUrl,
+        imageUrl:
+          imageUrl.trim() ||
+          'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
+        createdAt: new Date().toISOString(),
+        status: 'PUBLISHED',
+        isCustom: true,
       };
 
+      // 1. Save to persistent storage immediately
+      saveCustomEvent(newEvent);
+
+      // 2. Dispatch to backend if available
+      try {
+        await apiClient.post('/events', {
+          title: newEvent.title,
+          slug: newEvent.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+          description: newEvent.description,
+          category: newEvent.category,
+          venue: newEvent.venue,
+          city: newEvent.city,
+          startDate: `${startDate}T09:00:00`,
+          endDate: `${endDate || startDate}T18:00:00`,
+          capacity: newEvent.capacity,
+          isVirtual: newEvent.eventType === 'VIRTUAL',
+          ticketPrice: newEvent.price,
+        });
+      } catch (backendErr) {
+        console.warn('Backend event creation sync offline, saved to persistent client store:', backendErr);
+      }
+
       toast.success(`"${title}" published successfully! Live on EventSphere AI.`);
-      router.push('/manage');
-    } catch {
-      toast.error('Failed to publish event.');
+      router.push('/manage#my-events');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to publish event.');
     } finally {
       setIsSubmitting(false);
     }
