@@ -20,5 +20,9 @@ public class TaskResponse {
     private String priority;
     private String status;
     private Instant dueDate;
+    private double weight;
+    private double completionFraction;
+    private boolean isBlocked;
+    private String blockedReason;
     private Instant createdAt;
 }

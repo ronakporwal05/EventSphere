@@ -1,9 +1,14 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { ConferioTicker } from '@/features/conferio/components/ConferioTicker';
+import { ConferioNavbar } from '@/features/conferio/components/ConferioNavbar';
+import { ConferioFooter } from '@/features/conferio/components/ConferioFooter';
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
+import { hasHierarchyAccess, resolveHierarchyRole } from '@/features/auth/utils/hierarchy';
 import {
-  ShieldAlert,
+  ShieldCheck,
   Building2,
   Cpu,
   Server,
@@ -15,239 +20,400 @@ import {
   Star,
   Activity,
   ArrowRight,
+  Database,
+  Lock,
+  Layers,
+  RefreshCw,
+  Sliders,
+  DollarSign,
+  AlertCircle,
+  Crown,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-export default function CompanyAdminPage() {
-  const sampleAppFeedback = [
-    {
-      id: 'fb-01',
-      user: 'Michael Chen',
-      email: 'mchen@techcorp.com',
-      rating: 5,
-      nps: 9,
-      category: 'BOOKING_SPEED',
-      comment: '10-minute Redis seat lock is incredible! Zero ticket scalping, checkout took 20 seconds.',
-      time: '2 hours ago',
-    },
-    {
-      id: 'fb-02',
-      user: 'Sarah Jenkins',
-      email: 'sarah.j@enterprise.com',
-      rating: 4,
-      nps: 8,
-      category: 'UI',
-      comment: 'Very sleek dark mode interface. Would love Google Pay one-touch integration in next release.',
-      time: '4 hours ago',
-    },
-    {
-      id: 'fb-03',
-      user: 'Elena Rostova',
-      email: 'elena@quantum.io',
-      rating: 5,
-      nps: 10,
-      category: 'FEATURE_REQUEST',
-      comment: 'AI Vibe Matcher found me the exact session track I wanted without scrolling through 50 events.',
-      time: '1 day ago',
-    },
-  ];
+interface TenantOrg {
+  id: string;
+  name: string;
+  subdomain: string;
+  plan: 'ENTERPRISE' | 'GROWTH' | 'STARTER';
+  eventsCount: number;
+  attendeesCount: number;
+  status: 'ACTIVE' | 'MAINTENANCE';
+  dbSchema: string;
+}
+
+const SAMPLE_TENANTS: TenantOrg[] = [
+  {
+    id: 't-eventsphere',
+    name: 'EventSphere AI Global Ltd',
+    subdomain: 'london.eventsphere.ai',
+    plan: 'ENTERPRISE',
+    eventsCount: 8,
+    attendeesCount: 14200,
+    status: 'ACTIVE',
+    dbSchema: 'tenant_eventsphere_prod',
+  },
+  {
+    id: 't-bengaluru',
+    name: 'Bengaluru Tech Conclave',
+    subdomain: 'bengaluru.eventsphere.ai',
+    plan: 'GROWTH',
+    eventsCount: 3,
+    attendeesCount: 3200,
+    status: 'ACTIVE',
+    dbSchema: 'tenant_bengaluru_ai',
+  },
+  {
+    id: 't-bayarea',
+    name: 'Silicon Valley Founders Syndicate',
+    subdomain: 'sv.eventsphere.ai',
+    plan: 'ENTERPRISE',
+    eventsCount: 5,
+    attendeesCount: 6800,
+    status: 'ACTIVE',
+    dbSchema: 'tenant_sv_syndicate',
+  },
+];
+
+const SAMPLE_APP_FEEDBACK = [
+  {
+    id: 'fb-01',
+    user: 'Ronak Verma',
+    email: 'ronak.innovator@gmail.com',
+    rating: 5,
+    nps: 10,
+    category: 'BOOKING_SPEED',
+    comment: 'The 10-minute Redis seat lock is flawless! Zero scalping, interactive seat map confirmed in 15 seconds.',
+    time: '35 mins ago',
+  },
+  {
+    id: 'fb-02',
+    user: 'Elena Rostova',
+    email: 'elena@vectorflow.io',
+    rating: 5,
+    nps: 9,
+    category: 'AI_STUDIO',
+    comment: 'Qdrant vector similarity search against 100M embeddings is blazing fast. The Monte Carlo arrival curve is spot on.',
+    time: '2 hours ago',
+  },
+  {
+    id: 'fb-03',
+    user: 'Marcus Sterling',
+    email: 'marcus@apexengine.dev',
+    rating: 5,
+    nps: 10,
+    category: 'NEO_BRUTALISM',
+    comment: 'The EventSphere AI canary-yellow brutalist styling stands out from all other generic conference software.',
+    time: '4 hours ago',
+  },
+];
+
+export default function PlatformAdminPage() {
+  const { user, isAuthenticated, loginAsRole } = useAuthStore();
+  const isAdmin = isAuthenticated && hasHierarchyAccess(user?.role, 'ADMIN');
+
+  const [tenants, setTenants] = useState<TenantOrg[]>(SAMPLE_TENANTS);
+  const [selectedTenantId, setSelectedTenantId] = useState('t-eventsphere');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshTelemetry = async () => {
+    setIsRefreshing(true);
+    await new Promise((r) => setTimeout(r, 600));
+    setIsRefreshing(false);
+    toast.success('Multi-tenant metrics & container telemetry refreshed!');
+  };
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen flex flex-col bg-[#fbfbf9] text-black font-sans selection:bg-black selection:text-[#f5ce32]">
+        <ConferioTicker />
+        <ConferioNavbar />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-lg w-full bg-white border-4 border-black rounded-3xl p-8 sm:p-10 shadow-[8px_8px_0px_#000] text-center space-y-6">
+            <div className="w-16 h-16 mx-auto bg-purple-100 border-2 border-black rounded-2xl flex items-center justify-center text-purple-700 shadow-[3px_3px_0px_#000]">
+              <Lock className="w-8 h-8 stroke-[2.5]" />
+            </div>
+            <div>
+              <span className="px-3 py-1 bg-black text-[#f5ce32] text-xs font-black uppercase rounded-sm border border-black shadow-[2px_2px_0px_#fff]">
+                LEVEL 3 GOVERNANCE RESTRICTION
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black mt-3">
+                ADMIN ACCESS ONLY
+              </h2>
+              <p className="text-xs sm:text-sm font-bold text-neutral-600 mt-2">
+                The Multi-Tenant Admin Console requires Supreme Admin authority. Current role:{' '}
+                <span className="font-mono text-purple-700 uppercase">
+                  {user ? resolveHierarchyRole(user.role) : 'UNAUTHENTICATED GUEST'}
+                </span>
+                .
+              </p>
+            </div>
+            <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-2xl space-y-2">
+              <span className="text-[10px] font-black uppercase text-purple-900 block">
+                ⚡ 1-Click Elevate to Supreme Admin:
+              </span>
+              <button
+                onClick={() => {
+                  loginAsRole('ADMIN');
+                  toast.success('Elevated session to 👑 Supreme Admin!');
+                }}
+                className="w-full py-3 bg-purple-700 hover:bg-purple-800 text-white border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center justify-center space-x-2"
+              >
+                <Crown className="w-4 h-4 text-yellow-300" />
+                <span>Elevate to Admin Account</span>
+              </button>
+            </div>
+            <Link
+              href="/"
+              className="inline-block text-xs font-black uppercase underline hover:text-purple-700"
+            >
+              Return to Summit Home
+            </Link>
+          </div>
+        </main>
+        <ConferioFooter />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Platform Command Center</h1>
-            <span className="px-2 py-0.5 text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-md uppercase">
-              👑 Company Admin (Owner)
+    <div className="min-h-screen flex flex-col bg-[#fbfbf9] text-black font-sans selection:bg-black selection:text-[#f5ce32]">
+      {/* 1. Ticker */}
+      <ConferioTicker />
+
+      {/* 2. Navbar */}
+      <ConferioNavbar />
+
+      {/* 3. Hero Header Strip */}
+      <section className="bg-[#f5ce32] border-b-4 border-black px-4 sm:px-8 py-10 relative overflow-hidden">
+        <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <div className="inline-flex items-center space-x-1.5 px-3 py-1 bg-black text-[#f5ce32] text-xs font-black uppercase tracking-widest rounded-sm mb-3 border border-black shadow-[2px_2px_0px_#fff]">
+              <ShieldCheck className="w-3.5 h-3.5 text-[#f5ce32]" />
+              <span>PLATFORM GOVERNANCE // MULTI-TENANT ENGINE</span>
+            </div>
+
+            <h1 className="text-3xl sm:text-5xl font-black uppercase tracking-tighter text-black leading-none">
+              PLATFORM COMMAND CENTER
+            </h1>
+
+            <p className="text-xs sm:text-sm font-bold text-black/80 mt-2">
+              Cross-organization tenant isolation, Postgres schema RLS partitioning, and microservice cluster health.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={handleRefreshTelemetry}
+              disabled={isRefreshing}
+              className="px-4 py-2 bg-white hover:bg-neutral-100 text-black border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center space-x-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span>Refresh Health</span>
+            </button>
+
+            <Link
+              href="/manage"
+              className="px-4 py-2 bg-black hover:bg-neutral-800 text-[#f5ce32] border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#fff]"
+            >
+              Organizer Cockpit
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Top 4 Infrastructure KPI Cards */}
+      <section className="py-8 px-4 sm:px-8 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#000]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-neutral-500">Active Tenants</span>
+              <Building2 className="w-4 h-4 text-black" />
+            </div>
+            <p className="text-3xl font-black text-black">3 Enterprise</p>
+            <p className="text-[11px] font-bold text-emerald-700 mt-1">100% Schema Isolation</p>
+          </div>
+
+          <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#000]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-neutral-500">Gemini 1.5 Tokens</span>
+              <Sparkles className="w-4 h-4 text-purple-600" />
+            </div>
+            <p className="text-3xl font-black text-black font-mono">142,850</p>
+            <p className="text-[11px] font-bold text-purple-700 mt-1">Flash + Pro Multi-Agent</p>
+          </div>
+
+          <div className="bg-black text-white border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#f5ce32]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-neutral-400">Net Promoter (NPS)</span>
+              <Star className="w-4 h-4 text-[#f5ce32] fill-[#f5ce32]" />
+            </div>
+            <p className="text-3xl font-black text-[#f5ce32] font-mono">+74 NPS</p>
+            <p className="text-[11px] font-bold text-neutral-300 mt-1">World-Class Satisfaction</p>
+          </div>
+
+          <div className="bg-[#e5d4ff] border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#000]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-black uppercase text-neutral-800">Docker Fleet</span>
+              <Server className="w-4 h-4 text-black" />
+            </div>
+            <p className="text-3xl font-black text-black font-mono">6 / 6 Live</p>
+            <p className="text-[11px] font-black text-purple-900 mt-1">All Microservices Healthy</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. Main Content: Tenant Table & Service Cluster */}
+      <main className="py-4 px-4 sm:px-8 max-w-6xl mx-auto w-full flex-1 space-y-8">
+        {/* Service Health Badges */}
+        <div className="bg-white border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#000] space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+            <div className="flex items-center space-x-2">
+              <Database className="w-4 h-4 text-black" />
+              <span className="text-xs font-black uppercase tracking-wider text-black">
+                Multi-Tenant Microservices Health Mesh
+              </span>
+            </div>
+            <span className="text-[10px] font-mono font-black uppercase bg-emerald-400 text-black px-2 py-0.5 rounded border border-black">
+              ALL SYSTEMS OPERATIONAL
             </span>
           </div>
-          <p className="text-xs text-neutral-400 mt-1">Global multi-tenant governance, Gemini AI token consumption, container telemetry, and app review inbox</p>
-        </div>
 
-        <div className="flex items-center gap-2">
-          <span className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-semibold flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            All Infrastructure Healthy
-          </span>
-        </div>
-      </div>
-
-      {/* 4 Super Admin Telemetry Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl">
-          <span className="text-[10px] font-bold uppercase text-neutral-400 block mb-2">Global Tenants</span>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-white">1</span>
-            <span className="text-xs text-purple-400 font-medium">Enterprise Tier</span>
-          </div>
-        </div>
-
-        <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl">
-          <span className="text-[10px] font-bold uppercase text-neutral-400 block mb-2">Gemini 1.5 Tokens</span>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-white font-mono">142,850</span>
-            <span className="text-xs text-emerald-400 font-medium">Flash Model</span>
-          </div>
-        </div>
-
-        <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl">
-          <span className="text-[10px] font-bold uppercase text-neutral-400 block mb-2">App Net Promoter (NPS)</span>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-emerald-400 font-mono">+74</span>
-            <span className="text-xs text-emerald-400 font-medium">World Class</span>
-          </div>
-        </div>
-
-        <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl">
-          <span className="text-[10px] font-bold uppercase text-neutral-400 block mb-2">Container Status</span>
-          <div className="flex items-baseline justify-between">
-            <span className="text-2xl font-bold text-emerald-400 font-mono">5/5</span>
-            <span className="text-xs text-neutral-400 font-medium">Docker Active</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Left Infrastructure / Right App Feedback Inbox */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Platform Controls & Health */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
-              <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-indigo-400" />
-                <h3 className="text-xs font-bold text-white uppercase tracking-wider">Multi-Tenant Services Status</h3>
-              </div>
-              <span className="text-[10px] font-mono text-neutral-500">Auto-refresh: 30s</span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {[
+              { name: 'PostgreSQL 16', port: '5432', info: 'Row-Level Security', status: 'ONLINE' },
+              { name: 'Redis 7 Alpine', port: '6379', info: 'Distributed Locks', status: 'ONLINE' },
+              { name: 'Qdrant Vector', port: '6333', info: '768-dim Embeddings', status: 'ONLINE' },
+              { name: 'Spring Boot 3', port: '8080', info: 'Java 21 Virtual Threads', status: 'ONLINE' },
+              { name: 'FastAPI ML', port: '8000', info: '6 Scikit/Torch Models', status: 'ONLINE' },
+              { name: 'Next.js 16', port: '3000', info: 'React 19 App Router', status: 'ONLINE' },
+            ].map((srv, idx) => (
+              <div key={idx} className="p-3 bg-[#fbfbf9] border-2 border-black rounded-2xl space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">PostgreSQL</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="text-xs font-black text-black truncate">{srv.name}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 stroke-[3] shrink-0" />
                 </div>
-                <span className="text-[10px] text-neutral-500 block">Port 5432 • 25 Migrations</span>
-              </div>
-
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Redis</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-neutral-500 block">Port 6379 • Seat Locks Active</span>
-              </div>
-
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Qdrant Vector</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-neutral-500 block">Port 6333 • 768-dim</span>
-              </div>
-
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Spring Boot</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-neutral-500 block">Port 8080 • Java 21</span>
-              </div>
-
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Next.js Web</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-neutral-500 block">Port 3000 • React 19</span>
-              </div>
-
-              <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-white">Gemini 1.5</span>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <span className="text-[10px] text-neutral-500 block">Google API Connected</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Platform Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link
-              href="/ai-studio"
-              className="p-4 bg-neutral-900 border border-neutral-800 hover:border-purple-500/40 rounded-2xl flex items-center justify-between group transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-xl">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">AI Studio & RAG Index</h4>
-                  <p className="text-[11px] text-neutral-400">Inspect vector embeddings & Copilot</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-neutral-600 group-hover:text-purple-400 transition-colors" />
-            </Link>
-
-            <Link
-              href="/analytics"
-              className="p-4 bg-neutral-900 border border-neutral-800 hover:border-indigo-500/40 rounded-2xl flex items-center justify-between group transition-all"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
-                  <Activity className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">Financial BI & Yield</h4>
-                  <p className="text-[11px] text-neutral-400">Global billing & ticket revenue</p>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-neutral-600 group-hover:text-indigo-400 transition-colors" />
-            </Link>
-          </div>
-        </div>
-
-        {/* Right 1 Col: App & Platform Feedback Inbox */}
-        <div className="p-5 bg-neutral-900 border border-neutral-800 rounded-2xl space-y-4 flex flex-col">
-          <div className="flex items-center justify-between pb-3 border-b border-neutral-800">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-purple-400" />
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">App Review Inbox</h3>
-            </div>
-            <span className="text-[10px] text-purple-400 font-mono font-bold">Direct to Admin</span>
-          </div>
-
-          <div className="space-y-3 flex-1 overflow-y-auto">
-            {sampleAppFeedback.map((fb) => (
-              <div key={fb.id} className="p-3 bg-neutral-950/70 border border-neutral-800/80 rounded-xl space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="font-bold text-white block">{fb.user}</span>
-                    <span className="text-[10px] text-neutral-500 block">{fb.email}</span>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 text-amber-400">
-                      <Star className="w-3 h-3 fill-amber-400" />
-                      <span className="text-[11px] font-bold font-mono">{fb.rating}/5</span>
-                    </div>
-                    <span className="text-[9px] text-purple-400 font-mono">NPS {fb.nps}/10</span>
-                  </div>
-                </div>
-
-                <p className="text-neutral-300 text-[11px] leading-relaxed">
-                  "{fb.comment}"
-                </p>
-
-                <div className="flex items-center justify-between text-[10px] text-neutral-500 pt-1 border-t border-neutral-900">
-                  <span className="font-mono uppercase">{fb.category}</span>
-                  <span>{fb.time}</span>
-                </div>
+                <p className="text-[10px] font-mono text-neutral-500">Port {srv.port}</p>
+                <p className="text-[9px] font-bold text-neutral-700 truncate">{srv.info}</p>
               </div>
             ))}
           </div>
         </div>
-      </div>
+
+        {/* Tenant Roster & Review Inbox Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left: Tenant Organizations (7 Cols) */}
+          <div className="lg:col-span-7 bg-white border-3 border-black rounded-3xl p-6 sm:p-8 shadow-[6px_6px_0px_#000] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+              <div>
+                <span className="px-2 py-0.5 bg-[#f5ce32] text-black text-[10px] font-black uppercase rounded border border-black inline-block mb-1">
+                  TENANT ISOLATION
+                </span>
+                <h2 className="text-xl font-black uppercase tracking-tight text-black">
+                  Provisioned Organizations
+                </h2>
+              </div>
+
+              <button
+                onClick={() => toast.info('Organization creation wizard triggered.')}
+                className="px-3 py-1.5 bg-black hover:bg-neutral-800 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_#f5ce32]"
+              >
+                + Provision Tenant
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {tenants.map((t) => (
+                <div
+                  key={t.id}
+                  className="p-4 bg-neutral-50 border-2 border-black rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-100 transition-colors"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-black text-black">{t.name}</span>
+                      <span className="px-2 py-0.5 bg-[#f5ce32] text-black text-[9px] font-black uppercase rounded border border-black">
+                        {t.plan}
+                      </span>
+                    </div>
+                    <p className="text-[11px] font-mono text-neutral-600">
+                      Subdomain: {t.subdomain} · Schema: {t.dbSchema}
+                    </p>
+                    <p className="text-[10px] font-bold text-neutral-500">
+                      {t.eventsCount} Active Summits · {t.attendeesCount.toLocaleString()} Total Verified Passes
+                    </p>
+                  </div>
+
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <span className="inline-flex items-center space-x-1 px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase rounded border border-black">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <span>{t.status}</span>
+                    </span>
+                    <button
+                      onClick={() => toast.success(`Switched tenant context to ${t.name}`)}
+                      className="px-2.5 py-1 bg-white hover:bg-neutral-200 border border-black rounded-lg text-xs font-bold"
+                    >
+                      Manage
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right: Review Inbox & NPS Stream (5 Cols) */}
+          <div className="lg:col-span-5 bg-white border-3 border-black rounded-3xl p-6 sm:p-8 shadow-[6px_6px_0px_#000] space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b-2 border-black">
+              <div className="flex items-center space-x-2">
+                <MessageSquare className="w-4 h-4 text-black" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-black">
+                  App Review & NPS Inbox
+                </h3>
+              </div>
+              <span className="text-[10px] font-black uppercase bg-[#f5ce32] text-black px-2 py-0.5 rounded border border-black">
+                REAL-TIME STREAM
+              </span>
+            </div>
+
+            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+              {SAMPLE_APP_FEEDBACK.map((fb) => (
+                <div
+                  key={fb.id}
+                  className="p-3.5 bg-neutral-50 border-2 border-black rounded-2xl space-y-2 hover:bg-neutral-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-black text-black leading-tight">{fb.user}</p>
+                      <p className="text-[10px] text-neutral-500 font-bold">{fb.email}</p>
+                    </div>
+
+                    <div className="flex items-center space-x-1.5">
+                      <div className="flex items-center space-x-0.5 text-amber-500">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                        <span className="text-xs font-black text-black">{fb.rating}.0</span>
+                      </div>
+                      <span className="text-[9px] font-mono font-black uppercase px-1.5 py-0.5 bg-black text-[#f5ce32] rounded">
+                        NPS {fb.nps}
+                      </span>
+                    </div>
+                  </div>
+
+                  <p className="text-xs font-bold text-neutral-700 leading-snug">
+                    "{fb.comment}"
+                  </p>
+
+                  <div className="flex items-center justify-between text-[10px] font-mono text-neutral-500 pt-1 border-t border-black/10">
+                    <span className="uppercase">{fb.category}</span>
+                    <span>{fb.time}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* 6. Footer */}
+      <ConferioFooter />
     </div>
   );
 }

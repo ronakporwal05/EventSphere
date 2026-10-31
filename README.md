@@ -1,6 +1,6 @@
-# EventSphere AI — Multi-Tenant Enterprise Event Management Platform
+# Event Sphere AI — Multi-Tenant Enterprise Event Management Platform
 
-EventSphere AI is a production-ready Multi-Tenant Enterprise Event Management Platform powered by Spring Boot 3, Next.js 14+, Flutter, PostgreSQL, Redis, Qdrant, and Google Gemini AI.
+Event Sphere AI is a production-ready Multi-Tenant Enterprise Event Management Platform powered by Spring Boot 3, Next.js 16+, PostgreSQL, Redis, Qdrant, and Google Gemini AI.
 
 ## Project Structure
 

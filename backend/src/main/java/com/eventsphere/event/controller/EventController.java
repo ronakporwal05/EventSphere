@@ -45,9 +45,17 @@ public class EventController {
 
     @GetMapping
     public ResponseEntity<PagedResponse<EventResponse>> getAllEvents(
-            @RequestParam(name = "status", required = false) EventState status,
+            @RequestParam(name = "status", required = false) String status,
             Pageable pageable) {
-        Page<EventResponse> events = eventService.getAllEvents(status, pageable);
+        EventState eventState = null;
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status.trim())) {
+            try {
+                eventState = EventState.valueOf(status.trim().toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // Unknown status falls back to null (fetches all events)
+            }
+        }
+        Page<EventResponse> events = eventService.getAllEvents(eventState, pageable);
         return ResponseEntity.ok(PagedResponse.fromPage(events, "Events retrieved successfully"));
     }
 

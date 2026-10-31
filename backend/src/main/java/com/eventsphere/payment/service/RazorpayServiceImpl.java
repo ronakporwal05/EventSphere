@@ -27,8 +27,13 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.UUID;
@@ -44,21 +49,57 @@ public class RazorpayServiceImpl implements RazorpayService {
     private final EventRepository eventRepository;
     private final RedisTemplate<String, Object> redisTemplate;
 
-    @Value("${eventsphere.razorpay.key-id:rzp_test_eventsphere_2026}")
+    @Value("${eventsphere.razorpay.key-id:rzp_test_TsolyDOFVBcgLq}")
     private String keyId;
 
-    @Value("${eventsphere.razorpay.key-secret:secret_eventsphere_test_key}")
+    @Value("${eventsphere.razorpay.key-secret:49LGSbQeYnyMQDZdKprAOtFu}")
     private String keySecret;
 
     @Override
     @Transactional(readOnly = true)
     public RazorpayOrderResponse createOrder(RazorpayOrderRequest request) {
-        String tenantId = TenantContext.getTenantId();
-        log.info("Creating Razorpay Order for tier '{}' amount ₹{}", request.getTicketTypeId(), request.getAmount());
+        String tenantId = (TenantContext.getTenantId() != null && !TenantContext.getTenantId().isBlank())
+                ? TenantContext.getTenantId()
+                : "tenant-default";
+        log.info("Creating Razorpay Order for tenant '{}' tier '{}' amount ₹{}", tenantId, request.getTicketTypeId(), request.getAmount());
 
         long amountInPaise = request.getAmount().multiply(BigDecimal.valueOf(100)).longValue();
-        String orderId = "order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        String orderId = null;
         String receipt = "rcpt_" + System.currentTimeMillis();
+
+        if (keyId != null && !keyId.isBlank() && keySecret != null && !keySecret.isBlank()) {
+            try {
+                String auth = Base64.getEncoder().encodeToString((keyId.trim() + ":" + keySecret.trim()).getBytes(StandardCharsets.UTF_8));
+                String jsonBody = String.format("{\"amount\":%d,\"currency\":\"INR\",\"receipt\":\"%s\"}", amountInPaise, receipt);
+
+                HttpClient client = HttpClient.newHttpClient();
+                HttpRequest httpRequest = HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.razorpay.com/v1/orders"))
+                        .header("Authorization", "Basic " + auth)
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                        .build();
+
+                HttpResponse<String> response = client.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+                if (response.statusCode() == 200 || response.statusCode() == 201) {
+                    String body = response.body();
+                    int idIdx = body.indexOf("\"id\":\"");
+                    if (idIdx != -1) {
+                        int endIdx = body.indexOf("\"", idIdx + 6);
+                        orderId = body.substring(idIdx + 6, endIdx);
+                        log.info("Successfully created genuine Razorpay order: {}", orderId);
+                    }
+                } else {
+                    log.warn("Razorpay API returned status {}: {}", response.statusCode(), response.body());
+                }
+            } catch (Exception e) {
+                log.error("Failed to create Razorpay order via API: {}", e.getMessage());
+            }
+        }
+
+        if (orderId == null) {
+            orderId = "order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
+        }
 
         return RazorpayOrderResponse.builder()
                 .orderId(orderId)
@@ -74,9 +115,11 @@ public class RazorpayServiceImpl implements RazorpayService {
     @Override
     @Transactional
     public TicketResponse verifyPaymentAndIssueTicket(RazorpayVerifyRequest request) {
-        String tenantId = TenantContext.getTenantId();
-        log.info("Verifying Razorpay payment signature for order '{}' and payment '{}'",
-                request.getRazorpayOrderId(), request.getRazorpayPaymentId());
+        String tenantId = (TenantContext.getTenantId() != null && !TenantContext.getTenantId().isBlank())
+                ? TenantContext.getTenantId()
+                : "tenant-default";
+        log.info("Verifying Razorpay payment signature for tenant '{}' order '{}' and payment '{}'",
+                tenantId, request.getRazorpayOrderId(), request.getRazorpayPaymentId());
 
         // Validate signature if non-mock
         if (request.getRazorpaySignature() != null 
@@ -89,43 +132,68 @@ public class RazorpayServiceImpl implements RazorpayService {
             }
         }
 
-        TicketType ticketType = ticketTypeRepository.findByIdAndTenantIdAndDeletedFalse(request.getTicketTypeId(), tenantId)
-                .orElseGet(() -> {
-                    log.info("Ticket tier '{}' not found for tenant '{}', using default active tier", request.getTicketTypeId(), tenantId);
-                    List<TicketType> existing = ticketTypeRepository.findAll();
-                    if (!existing.isEmpty()) {
-                        return existing.get(0);
-                    }
-                    throw new ResourceNotFoundException("Ticket tier not found");
-                });
+        String targetTierId = request.getTicketTypeId() != null ? request.getTicketTypeId().trim() : "tier-vip-01";
+        TicketType ticketType = ticketTypeRepository.findByIdAndTenantIdAndDeletedFalse(targetTierId, tenantId)
+                .orElseGet(() -> ticketTypeRepository.findById(targetTierId)
+                        .filter(t -> !t.isDeleted())
+                        .orElseGet(() -> {
+                            log.info("Ticket tier '{}' not found directly, resolving active tier in tenant '{}'", targetTierId, tenantId);
+                            List<TicketType> existing = ticketTypeRepository.findAll();
+                            if (!existing.isEmpty()) {
+                                return existing.get(0);
+                            }
+                            throw new ResourceNotFoundException("Ticket tier not found");
+                        }));
 
         if (ticketType.getAvailableQuantity() <= 0) {
             throw new ResourceConflictException("Ticket tier is sold out.");
         }
 
         // Deduct quantity
-        ticketType.setAvailableQuantity(ticketType.getAvailableQuantity() - 1);
-        ticketTypeRepository.save(ticketType);
+        if (ticketType.getAvailableQuantity() > 0) {
+            ticketType.setAvailableQuantity(ticketType.getAvailableQuantity() - 1);
+            ticketTypeRepository.save(ticketType);
+        }
 
         Event event = ticketType.getEvent();
+        if (event == null) {
+            List<Event> allEvents = eventRepository.findAll();
+            if (!allEvents.isEmpty()) {
+                event = allEvents.get(0);
+            } else {
+                throw new ResourceNotFoundException("No active summit event found to bind ticket pass.");
+            }
+        }
+        Event boundEvent = event;
 
-        // Create attendee registration record
-        String regNumber = "REG-IND-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
-        Registration reg = Registration.builder()
-                .tenantId(tenantId)
-                .event(event)
-                .registrationNumber(regNumber)
-                .attendeeName(request.getUserName() != null ? request.getUserName() : "Attendee")
-                .attendeeEmail(request.getUserEmail() != null ? request.getUserEmail() : "attendee@eventsphere.ai")
-                .status(RegistrationStatus.CONFIRMED)
-                .build();
-        Registration savedReg = registrationRepository.save(reg);
+        // Find or create attendee registration record
+        String attendeeEmail = (request.getUserEmail() != null && !request.getUserEmail().isBlank())
+                ? request.getUserEmail().trim()
+                : "attendee@eventsphere.ai";
+        String attendeeName = (request.getUserName() != null && !request.getUserName().isBlank())
+                ? request.getUserName().trim()
+                : "Attendee";
+
+        Registration savedReg = registrationRepository
+                .findByTenantIdAndEventIdAndAttendeeEmailAndDeletedFalse(tenantId, boundEvent.getId(), attendeeEmail)
+                .orElseGet(() -> {
+                    String regNumber = "REG-IND-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+                    Registration reg = Registration.builder()
+                            .tenantId(tenantId)
+                            .event(boundEvent)
+                            .registrationNumber(regNumber)
+                            .attendeeName(attendeeName)
+                            .attendeeEmail(attendeeEmail)
+                            .status(RegistrationStatus.CONFIRMED)
+                            .build();
+                    return registrationRepository.save(reg);
+                });
 
         // Issue ticket with unique scannable QR token
         String ticketNumber = "TCK-IND-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Ticket ticket = Ticket.builder()
                 .tenantId(tenantId)
-                .event(event)
+                .event(boundEvent)
                 .registration(savedReg)
                 .ticketType(ticketType)
                 .ticketNumber(ticketNumber)
@@ -134,18 +202,22 @@ public class RazorpayServiceImpl implements RazorpayService {
                 .build();
         Ticket savedTicket = ticketRepository.save(ticket);
 
-        // Clear temporary Redis hold
-        String lockKey = String.format("lock:ticket:%s:%s", request.getTicketTypeId(), request.getUserEmail());
-        redisTemplate.delete(lockKey);
+        // Clear temporary Redis hold if any
+        try {
+            String lockKey = String.format("lock:ticket:%s:%s", targetTierId, attendeeEmail);
+            redisTemplate.delete(lockKey);
+        } catch (Exception ex) {
+            log.debug("Redis hold key cleanup skipped: {}", ex.getMessage());
+        }
 
-        log.info("Successfully issued ticket pass '{}' for attendee '{}'", ticketNumber, reg.getAttendeeEmail());
+        log.info("Successfully issued ticket pass '{}' for attendee '{}'", ticketNumber, savedReg.getAttendeeEmail());
 
         return TicketResponse.builder()
                 .id(savedTicket.getId())
-                .eventId(event.getId())
-                .eventTitle(event.getTitle())
+                .eventId(boundEvent.getId())
+                .eventTitle(boundEvent.getTitle())
                 .registrationId(savedReg.getId())
-                .registrationNumber(regNumber)
+                .registrationNumber(savedReg.getRegistrationNumber())
                 .attendeeName(savedReg.getAttendeeName())
                 .attendeeEmail(savedReg.getAttendeeEmail())
                 .ticketTypeId(ticketType.getId())

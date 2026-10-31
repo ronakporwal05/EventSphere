@@ -95,6 +95,25 @@ public class TaskServiceImpl implements TaskService {
     }
 
     private TaskResponse mapToResponse(EventTask t) {
+        double fraction = t.getCompletionFraction();
+        if (fraction == 0.0 && "COMPLETED".equalsIgnoreCase(t.getStatus())) {
+            fraction = 1.0;
+        } else if (fraction == 0.0 && "IN_REVIEW".equalsIgnoreCase(t.getStatus())) {
+            fraction = 0.8;
+        } else if (fraction == 0.0 && "IN_PROGRESS".equalsIgnoreCase(t.getStatus())) {
+            fraction = 0.5;
+        }
+
+        double w = t.getWeight();
+        if (w <= 0.0) {
+            w = switch (t.getPriority() != null ? t.getPriority().toUpperCase() : "MEDIUM") {
+                case "URGENT" -> 4.0;
+                case "HIGH" -> 3.0;
+                case "LOW" -> 1.0;
+                default -> 2.0;
+            };
+        }
+
         return TaskResponse.builder()
                 .id(t.getId())
                 .eventId(t.getEvent().getId())
@@ -104,6 +123,10 @@ public class TaskServiceImpl implements TaskService {
                 .priority(t.getPriority())
                 .status(t.getStatus())
                 .dueDate(t.getDueDate())
+                .weight(w)
+                .completionFraction(fraction)
+                .isBlocked(t.isBlocked())
+                .blockedReason(t.getBlockedReason())
                 .createdAt(t.getCreatedAt())
                 .build();
     }

@@ -24,7 +24,10 @@ export interface EventItem {
   virtualLink?: string;
   capacity: number;
   registeredCount: number;
+  currentAttendees?: number;
   bannerUrl?: string;
+  coverImageUrl?: string;
+  ticketTiers?: Array<{ name: string; price: number; available?: number }>;
   organizerName: string;
   sessions?: Session[];
   tags: string[];

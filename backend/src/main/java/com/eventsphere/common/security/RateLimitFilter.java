@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -22,6 +23,22 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int MAX_REQUESTS_PER_MINUTE = 1000;
     private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
+
+    @Scheduled(fixedRate = 60000)
+    public void resetCounts() {
+        requestCounts.clear();
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path != null && (
+                path.startsWith("/actuator") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.equals("/favicon.ico")
+        );
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)

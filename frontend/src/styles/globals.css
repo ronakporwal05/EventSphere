@@ -1,8 +1,101 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --eventbrite-orange: #f05537;
+    --eventbrite-orange-hover: #d1410c;
+    --eventbrite-navy: #1e0a3c;
+    --eventbrite-gray: #6f7287;
+    --eventbrite-border: #eeedf2;
+    --eventbrite-bg: #f8f7fa;
+  }
+
   body {
-    background-color: #0a0a0a;
-    color: #ededed;
+    background-color: var(--eventbrite-bg);
+    color: var(--eventbrite-navy);
+  }
+
+  /* Smooth scroll */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 9999px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #374151;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
   }
 }
+
+/* Neo-Brutalist Marquee and Spin Keyframes */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+/* Ticket Notch Cutout */
+.ticket-notch-left {
+  position: relative;
+}
+.ticket-notch-left::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: #f8f8f6;
+  border-radius: 9999px;
+  border-right: 2px solid #000;
+  z-index: 10;
+}
+.ticket-notch-right {
+  position: relative;
+}
+.ticket-notch-right::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -12px;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  background-color: #f8f8f6;
+  border-radius: 9999px;
+  border-left: 2px solid #000;
+  z-index: 10;
+}
+

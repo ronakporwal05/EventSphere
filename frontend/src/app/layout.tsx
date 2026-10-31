@@ -1,16 +1,12 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import '@/styles/globals.css';
 import { AppProviders } from '@/providers/app-providers';
-
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+import { UniversalAiChatbot } from '@/components/UniversalAiChatbot';
 
 export const metadata: Metadata = {
-  title: 'EventSphere AI — Enterprise Intelligence & Event Management',
-  description: 'AI-driven multi-tenant event management and intelligence platform',
+  title: 'Event Sphere AI — Enterprise Multi-Tenant Event & Intelligence Platform',
+  description: 'Event Sphere AI is the next-generation event management, ticketing, turnstile operations, and predictive intelligence platform.',
 };
-
-import { UniversalAiChatbot } from '@/components/UniversalAiChatbot';
 
 export default function RootLayout({
   children,
@@ -18,8 +14,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans bg-neutral-950 text-neutral-100 antialiased min-h-screen selection:bg-orange-500 selection:text-white`}>
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className="font-sans antialiased min-h-screen bg-[#F8F7FA] text-[#1E0A3C] dark:bg-[#0A0A0C] dark:text-[#F3F4F6] selection:bg-[#F05537] selection:text-white transition-colors duration-200"
+      >
         <AppProviders>
           {children}
           <UniversalAiChatbot />

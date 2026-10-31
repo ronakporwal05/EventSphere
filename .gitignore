@@ -28,6 +28,17 @@ frontend/out/
 .env.production
 .github/
 
+# Python / ML
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
 # Mobile
 mobile/.dart_tool/
 mobile/build/

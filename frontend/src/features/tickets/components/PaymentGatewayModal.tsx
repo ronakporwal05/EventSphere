@@ -20,9 +20,14 @@ import {
   Share2,
   Users,
   Check,
+  X,
+  User,
+  Mail,
+  Phone,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiClient } from '@/lib/api-client';
+import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
 
 interface PaymentGatewayModalProps {
   isOpen: boolean;
@@ -81,13 +86,26 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   const [showSplitBill, setShowSplitBill] = useState(false);
   const [splitFriendsCount, setSplitFriendsCount] = useState(3);
 
+  // Auth store current user
+  const currentUser = useAuthStore((s) => s.user);
+
   // Razorpay Key & Prefill
   const [razorpayKey, setRazorpayKey] = useState<string>(
-    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_51O2XQ86qU8yB0'
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_TsolyDOFVBcgLq'
   );
   const [attendeeName, setAttendeeName] = useState('Public User');
   const [attendeeEmail, setAttendeeEmail] = useState('user@eventsphere.ai');
   const [attendeePhone, setAttendeePhone] = useState('9876543210');
+  const [upiId, setUpiId] = useState('attendee@okhdfcbank');
+
+  // Sync attendee info from authenticated user
+  useEffect(() => {
+    if (currentUser) {
+      const name = [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ') || (currentUser as any).name;
+      if (name) setAttendeeName(name);
+      if (currentUser.email) setAttendeeEmail(currentUser.email);
+    }
+  }, [currentUser, isOpen]);
 
   // Timer countdown
   useEffect(() => {
@@ -150,7 +168,8 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
     const scriptLoaded = await loadRazorpayScript();
 
     if (!scriptLoaded) {
-      toast.error('Could not load Razorpay CDN. Check internet connection or use Instant Sandbox.');
+      toast.error('Could not load Razorpay CDN (may be blocked by adblocker). Switched to UPI / Instant Gateway.');
+      setPaymentMethod('upi');
       setIsProcessing(false);
       return;
     }
@@ -173,10 +192,10 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
 
       // Step B: Configure Razorpay Checkout Options
       const options = {
-        key: razorpayKey.trim() || orderData.keyId,
+        key: (orderData.keyId || razorpayKey || 'rzp_test_TsolyDOFVBcgLq').trim(),
         amount: orderData.amountInPaise,
         currency: orderData.currency || 'INR',
-        name: 'EventSphere AI',
+        name: 'Event Sphere AI',
         description: `${tierName} • ${eventTitle}`,
         image: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
         order_id: orderData.orderId,
@@ -193,7 +212,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
           company: needGstInvoice ? companyName : 'Individual',
         },
         theme: {
-          color: '#f97316',
+          color: '#f5ce32',
         },
         modal: {
           ondismiss: function () {
@@ -308,7 +327,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-bold text-white tracking-tight">BharatPay & Razorpay Gateway</h3>
+                <h3 className="text-sm font-bold text-white tracking-tight">Razorpay & UPI Gateway</h3>
                 <span className="px-1.5 py-0.2 text-[8px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded uppercase">
                   GST & UPI 2.0
                 </span>
@@ -317,11 +336,22 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center space-x-1.5 px-3 py-1 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-mono font-bold animate-pulse">
-            <Clock className="w-3.5 h-3.5 text-amber-400" />
-            <span>
-              {minutes}:{seconds.toString().padStart(2, '0')}
-            </span>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-amber-500/15 border border-amber-500/30 rounded-xl text-amber-300 text-xs font-mono font-bold animate-pulse">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
+              <span>
+                {minutes}:{seconds.toString().padStart(2, '0')}
+              </span>
+            </div>
+
+            <button
+              onClick={onClose}
+              type="button"
+              aria-label="Close Checkout"
+              className="p-1.5 text-neutral-400 hover:text-white rounded-xl hover:bg-neutral-800 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         </div>
 
@@ -349,6 +379,39 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 <span className="text-lg font-bold font-mono text-emerald-400">
                   ₹{finalPayable.toLocaleString('en-IN')}
                 </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Attendee Details Form */}
+          <div className="p-3 bg-neutral-950/50 border border-neutral-800 rounded-2xl space-y-2">
+            <span className="text-[11px] font-bold text-neutral-300 flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-amber-400" />
+              <span>Attendee Pass Details</span>
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-0.5">Attendee Name</label>
+                <div className="relative">
+                  <input
+                    value={attendeeName}
+                    onChange={(e) => setAttendeeName(e.target.value)}
+                    placeholder="Full Name"
+                    className="w-full px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-bold uppercase text-neutral-400 block mb-0.5">Pass Email</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    value={attendeeEmail}
+                    onChange={(e) => setAttendeeEmail(e.target.value)}
+                    placeholder="email@domain.com"
+                    className="w-full px-2.5 py-1.5 bg-neutral-900 border border-neutral-800 rounded-lg text-xs text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -579,6 +642,65 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 <span>1-Click Test</span>
               </button>
             </div>
+
+            {/* Selected Method Details */}
+            {paymentMethod === 'razorpay' && (
+              <div className="p-3 bg-blue-950/20 border border-blue-500/30 rounded-xl space-y-1.5 animate-in fade-in">
+                <div className="flex items-center justify-between text-[11px] font-bold text-blue-300">
+                  <span className="flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                    <span>Razorpay Standard Checkout (PCI-DSS Level 1)</span>
+                  </span>
+                  <span className="font-mono text-[9px] bg-blue-500/20 px-1.5 py-0.5 rounded text-blue-200">
+                    ID: {razorpayKey.substring(0, 10)}...
+                  </span>
+                </div>
+                <p className="text-[10px] text-neutral-400 leading-relaxed">
+                  Opens the official Razorpay popup modal supporting all Credit & Debit Cards (Visa, Mastercard, RuPay), UPI, Netbanking (50+ banks), and digital wallets.
+                </p>
+              </div>
+            )}
+
+            {paymentMethod === 'upi' && (
+              <div className="p-3 bg-orange-950/20 border border-orange-500/30 rounded-xl space-y-2.5 animate-in fade-in">
+                <div className="flex items-center justify-between text-[11px] font-bold text-orange-300">
+                  <span className="flex items-center gap-1.5">
+                    <Smartphone className="w-3.5 h-3.5 text-orange-400" />
+                    <span>Instant UPI & QR Code Authorization</span>
+                  </span>
+                  <span className="text-[9px] font-mono text-emerald-400 font-bold">Zero Transaction Fee</span>
+                </div>
+
+                <div className="flex items-center gap-3 bg-neutral-900/90 p-2.5 rounded-lg border border-neutral-800">
+                  <div className="w-16 h-16 bg-white p-1 rounded-md flex items-center justify-center shrink-0">
+                    <QrCode className="w-14 h-14 text-black" />
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <span className="text-[10px] text-neutral-400 block font-mono">Scan or Pay using any UPI app:</span>
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {['Google Pay', 'PhonePe', 'Paytm', 'BHIM', 'CRED'].map((app) => (
+                        <span key={app} className="px-1.5 py-0.5 bg-neutral-800 border border-neutral-700 text-neutral-300 text-[9px] font-bold rounded">
+                          {app}
+                        </span>
+                      ))}
+                    </div>
+                    <span className="text-[9px] text-orange-400 font-mono block">VPA: eventsphere.ai@icici</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {paymentMethod === 'sandbox' && (
+              <div className="p-3 bg-emerald-950/20 border border-emerald-500/30 rounded-xl space-y-1 animate-in fade-in">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-300">
+                  <Zap className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Instant 1-Click Verification (Development Sandbox)</span>
+                </div>
+                <p className="text-[10px] text-neutral-400">
+                  Simulates instant 200 OK signature authorization without third-party network popups and saves the QR pass directly to your Attendee Wallet.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -611,7 +733,7 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
                 </>
               )}
             </button>
-          ) : (
+          ) : paymentMethod === 'upi' ? (
             <button
               type="button"
               disabled={isProcessing}
@@ -621,12 +743,31 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin text-neutral-950" />
+                  <span>Authorizing UPI...</span>
+                </>
+              ) : (
+                <>
+                  <span>Authorize ₹{finalPayable.toLocaleString('en-IN')} via UPI</span>
+                  <ArrowRight className="w-4 h-4 text-neutral-950" />
+                </>
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={isProcessing}
+              onClick={handleSandboxAuthorize}
+              className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 via-teal-500 to-blue-600 hover:from-emerald-600 hover:to-blue-700 text-white font-extrabold rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-white" />
                   <span>Verifying Ticket...</span>
                 </>
               ) : (
                 <>
-                  <span>Authorize ₹{finalPayable.toLocaleString('en-IN')}</span>
-                  <ArrowRight className="w-4 h-4 text-neutral-950" />
+                  <span>Instant Test ₹{finalPayable.toLocaleString('en-IN')}</span>
+                  <Zap className="w-4 h-4 text-white" />
                 </>
               )}
             </button>

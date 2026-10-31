@@ -34,43 +34,59 @@ export const VerifyEmailForm: React.FC = () => {
   }, [verify]);
 
   return (
-    <div className="w-full max-w-md p-8 bg-neutral-900/90 backdrop-blur-xl border border-neutral-800 rounded-2xl shadow-2xl text-center">
-      {status === 'verifying' && (
-        <div className="py-6 flex flex-col items-center space-y-3">
-          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
-          <h2 className="text-xl font-bold text-white">Verifying your email...</h2>
-          <p className="text-xs text-neutral-400">Please wait while we confirm your credentials.</p>
+    <div className="w-full max-w-md bg-white text-black border-2 border-black rounded-3xl shadow-[8px_8px_0px_#000] overflow-hidden text-center">
+      {/* Top Header Strip */}
+      <div className="bg-[#f5ce32] border-b-2 border-black p-4 flex items-center justify-between">
+        <Link href="/" className="text-xl font-black uppercase tracking-tighter hover:opacity-80">
+          EVENT SPHERE AI
+        </Link>
+        <div className="flex items-center space-x-1 px-2 py-0.5 bg-black text-[#f5ce32] rounded-full text-[10px] font-black uppercase">
+          <span>VERIFICATION</span>
         </div>
-      )}
+      </div>
 
-      {status === 'success' && (
-        <div className="py-6 flex flex-col items-center space-y-3">
-          <CheckCircle2 className="w-12 h-12 text-emerald-400" />
-          <h2 className="text-xl font-bold text-white">Email Verified!</h2>
-          <p className="text-xs text-neutral-400 max-w-xs">{message}</p>
-          <Link
-            href="/login"
-            className="mt-4 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-xl inline-flex items-center space-x-2 transition-all"
-          >
-            <span>Proceed to Sign In</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      )}
+      <div className="p-6 sm:p-8">
+        {status === 'verifying' && (
+          <div className="py-6 flex flex-col items-center space-y-3">
+            <Loader2 className="w-10 h-10 text-black animate-spin" />
+            <h2 className="text-xl font-black uppercase text-black">Verifying Credentials</h2>
+            <p className="text-xs text-neutral-600 font-medium">Please wait while we confirm your email token...</p>
+          </div>
+        )}
 
-      {status === 'error' && (
-        <div className="py-6 flex flex-col items-center space-y-3">
-          <XCircle className="w-12 h-12 text-rose-400" />
-          <h2 className="text-xl font-bold text-white">Verification Failed</h2>
-          <p className="text-xs text-neutral-400 max-w-xs">{message}</p>
-          <Link
-            href="/login"
-            className="mt-4 px-6 py-2.5 bg-neutral-800 hover:bg-neutral-700 text-white text-sm font-semibold rounded-xl inline-flex items-center space-x-2 transition-all"
-          >
-            <span>Return to Sign In</span>
-          </Link>
-        </div>
-      )}
+        {status === 'success' && (
+          <div className="py-6 flex flex-col items-center space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-[#f5ce32] border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#000]">
+              <CheckCircle2 className="w-8 h-8 text-black" />
+            </div>
+            <h2 className="text-2xl font-black uppercase text-black">Email Confirmed!</h2>
+            <p className="text-xs text-neutral-600 font-medium max-w-xs">{message}</p>
+            <Link
+              href="/login"
+              className="mt-4 px-6 py-3 bg-[#f5ce32] hover:bg-yellow-400 text-black border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[3px_3px_0px_#000] hover:translate-x-[1px] hover:translate-y-[1px] inline-flex items-center space-x-2 transition-all"
+            >
+              <span>Proceed to Sign In</span>
+              <ArrowRight className="w-4 h-4 stroke-[3]" />
+            </Link>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="py-6 flex flex-col items-center space-y-3">
+            <div className="w-14 h-14 rounded-2xl bg-rose-200 border-2 border-black flex items-center justify-center shadow-[3px_3px_0px_#000]">
+              <XCircle className="w-8 h-8 text-black" />
+            </div>
+            <h2 className="text-2xl font-black uppercase text-black">Verification Failed</h2>
+            <p className="text-xs text-neutral-600 font-medium max-w-xs">{message}</p>
+            <Link
+              href="/login"
+              className="mt-4 px-6 py-3 bg-white hover:bg-neutral-50 text-black border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[3px_3px_0px_#000] inline-flex items-center space-x-2 transition-all"
+            >
+              <span>Return to Sign In</span>
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

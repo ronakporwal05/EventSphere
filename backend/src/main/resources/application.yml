@@ -29,3 +29,8 @@ eventsphere:
     llm-model: gemini-1.5-flash
     embedding-model: text-embedding-004
     base-url: https://generativelanguage.googleapis.com/v1beta
+  razorpay:
+    key-id: ${EVENTSPHERE_RAZORPAY_KEY_ID:${RAZORPAY_KEY_ID:rzp_test_TsolyDOFVBcgLq}}
+    key-secret: ${EVENTSPHERE_RAZORPAY_KEY_SECRET:${RAZORPAY_KEY_SECRET:49LGSbQeYnyMQDZdKprAOtFu}}
+  ml-service:
+    url: ${EVENTSPHERE_ML_SERVICE_URL:http://ml-service:8000}

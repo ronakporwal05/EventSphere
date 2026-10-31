@@ -63,7 +63,7 @@ export const LoginForm: React.FC = () => {
         <div className="flex items-center justify-center w-12 h-12 mb-3 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/30">
           <Sparkles className="w-6 h-6 text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">EventSphere AI</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight">Event Sphere AI</h1>
         <p className="text-sm text-neutral-400 mt-1">Enterprise Intelligent Event Operations</p>
       </div>
 
@@ -181,38 +181,43 @@ export const LoginForm: React.FC = () => {
           )}
         </button>
 
-        {/* 3 Distinct Role Quick Switchers */}
+        {/* 3 Distinct Hierarchical Role Quick Switchers */}
         <div className="pt-2 space-y-1.5">
-          <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 text-center">1-Click Quick Role Switchers</p>
+          <p className="text-[10px] uppercase font-bold tracking-wider text-neutral-400 text-center">
+            Hierarchical 1-Click Role Login
+          </p>
           <div className="grid grid-cols-3 gap-1.5">
             <button
               type="button"
               disabled={loading}
               onClick={() => onSubmit({ email: 'admin@eventsphere.ai', password: 'Password123!', rememberMe: true })}
-              className="p-2 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-500/30 text-purple-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center"
+              className="p-2.5 bg-purple-950/50 hover:bg-purple-900/70 border border-purple-500/40 text-purple-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center group"
             >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400 mb-0.5" />
-              <span>👑 Admin</span>
+              <Sparkles className="w-3.5 h-3.5 text-purple-400 mb-0.5 group-hover:scale-110 transition-transform" />
+              <span className="font-bold">👑 Admin</span>
+              <span className="text-[8px] text-purple-300/70 font-mono">L3 · All Tabs</span>
             </button>
 
             <button
               type="button"
               disabled={loading}
               onClick={() => onSubmit({ email: 'manager@eventsphere.ai', password: 'Password123!', rememberMe: true })}
-              className="p-2 bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-500/30 text-indigo-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center"
+              className="p-2.5 bg-indigo-950/50 hover:bg-indigo-900/70 border border-indigo-500/40 text-indigo-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center group"
             >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-400 mb-0.5" />
-              <span>🏢 Manager</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 mb-0.5 group-hover:scale-110 transition-transform" />
+              <span className="font-bold">🏢 Manager</span>
+              <span className="text-[8px] text-indigo-300/70 font-mono">L2 · Event Ops</span>
             </button>
 
             <button
               type="button"
               disabled={loading}
               onClick={() => onSubmit({ email: 'user@eventsphere.ai', password: 'Password123!', rememberMe: true })}
-              className="p-2 bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-500/30 text-emerald-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center"
+              className="p-2.5 bg-emerald-950/50 hover:bg-emerald-900/70 border border-emerald-500/40 text-emerald-200 rounded-xl text-[11px] font-semibold flex flex-col items-center justify-center transition-all text-center group"
             >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-400 mb-0.5" />
-              <span>👤 Public</span>
+              <Sparkles className="w-3.5 h-3.5 text-emerald-400 mb-0.5 group-hover:scale-110 transition-transform" />
+              <span className="font-bold">👤 User</span>
+              <span className="text-[8px] text-emerald-300/70 font-mono">L1 · Passes</span>
             </button>
           </div>
         </div>

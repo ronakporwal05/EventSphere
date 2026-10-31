@@ -18,4 +18,5 @@ public interface RegistrationRepository extends JpaRepository<Registration, Stri
     Optional<Registration> findByTenantIdAndEventIdAndAttendeeEmailAndDeletedFalse(String tenantId, String eventId, String attendeeEmail);
     Page<Registration> findByTenantIdAndEventIdAndStatusAndDeletedFalse(String tenantId, String eventId, RegistrationStatus status, Pageable pageable);
     long countByTenantIdAndEventIdAndStatusAndDeletedFalse(String tenantId, String eventId, RegistrationStatus status);
+    long countByTenantIdAndEventIdAndDeletedFalse(String tenantId, String eventId);
 }

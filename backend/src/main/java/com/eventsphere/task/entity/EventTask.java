@@ -42,4 +42,19 @@ public class EventTask extends AuditableEntity {
 
     @Column(name = "due_date")
     private Instant dueDate;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private double weight = 1.0;
+
+    @Column(name = "completion_fraction", nullable = false)
+    @Builder.Default
+    private double completionFraction = 0.0;
+
+    @Column(name = "is_blocked", nullable = false)
+    @Builder.Default
+    private boolean isBlocked = false;
+
+    @Column(name = "blocked_reason", length = 512)
+    private String blockedReason;
 }

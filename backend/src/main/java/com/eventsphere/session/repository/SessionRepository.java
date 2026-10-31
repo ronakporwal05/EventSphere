@@ -13,6 +13,7 @@ import java.util.Optional;
 @Repository
 public interface SessionRepository extends JpaRepository<Session, String> {
     List<Session> findByTenantIdAndEventId(String tenantId, String eventId);
+    List<Session> findByTenantIdAndEventIdAndDeletedFalse(String tenantId, String eventId);
     Optional<Session> findByIdAndTenantId(String id, String tenantId);
 
     @Query("SELECT s FROM Session s WHERE s.tenantId = :tenantId AND s.room.id = :roomId AND " +

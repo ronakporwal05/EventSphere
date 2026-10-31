@@ -30,7 +30,7 @@ export const RegisterForm: React.FC = () => {
     try {
       const response = await authService.register(data);
       setAuth(response.user, response.token, response.refreshToken);
-      toast.success('Account created successfully! Welcome to EventSphere.');
+      toast.success('Account created successfully! Welcome to Event Sphere AI.');
       router.push('/portal');
     } catch (error: any) {
       // Fallback auto-provisioning for testing
@@ -44,7 +44,7 @@ export const RegisterForm: React.FC = () => {
         emailVerified: true,
       };
       setAuth(user, 'mock-jwt-reg-token-2026', 'mock-jwt-reg-refresh-2026');
-      toast.success('Account created successfully! Welcome to EventSphere.');
+      toast.success('Account created successfully! Welcome to Event Sphere AI.');
       router.push('/portal');
     } finally {
       setLoading(false);
@@ -58,7 +58,7 @@ export const RegisterForm: React.FC = () => {
           <Sparkles className="w-6 h-6 text-neutral-950 font-bold" />
         </div>
         <h1 className="text-2xl font-bold text-white tracking-tight">Create Account</h1>
-        <p className="text-sm text-neutral-400 mt-1">Join EventSphere India Event Platform</p>
+        <p className="text-sm text-neutral-400 mt-1">Join Event Sphere AI Platform</p>
       </div>
 
       {/* Google 1-Click Registration */}

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { UserProfile } from '../types/auth.types';
+import { HIERARCHICAL_ACCOUNTS, HierarchyRoleType } from '../utils/hierarchy';
 
 interface AuthState {
   user: UserProfile | null;
@@ -7,6 +8,7 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   setAuth: (user: UserProfile, token: string, refreshToken?: string) => void;
+  loginAsRole: (role: Exclude<HierarchyRoleType, 'GUEST'>) => UserProfile;
   clearAuth: () => void;
   setUser: (user: UserProfile) => void;
   initialize: () => void;
@@ -28,6 +30,31 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem('user', JSON.stringify(user));
     }
     set({ user, token, isAuthenticated: true, isLoading: false });
+  },
+
+  loginAsRole: (role) => {
+    const account = HIERARCHICAL_ACCOUNTS[role];
+    const user: UserProfile = {
+      id: `usr-${role.toLowerCase()}-active`,
+      email: account.email,
+      firstName: account.firstName,
+      lastName: account.lastName,
+      role: account.role,
+      tenantId: 'tenant-default',
+      emailVerified: true,
+      createdAt: new Date().toISOString(),
+    };
+    const token = `mock-jwt-${role.toLowerCase()}-session-2026`;
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', `mock-refresh-${role.toLowerCase()}-2026`);
+      localStorage.setItem('tenant_id', 'tenant-default');
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+
+    set({ user, token, isAuthenticated: true, isLoading: false });
+    return user;
   },
 
   clearAuth: () => {

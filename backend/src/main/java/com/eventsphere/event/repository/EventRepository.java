@@ -16,6 +16,7 @@ public interface EventRepository extends JpaRepository<Event, String> {
     Page<Event> findByTenantIdAndStatus(String tenantId, EventState status, Pageable pageable);
     Page<Event> findByTenantIdAndStatusAndDeletedFalse(String tenantId, EventState status, Pageable pageable);
     Optional<Event> findByIdAndTenantId(String id, String tenantId);
+    Optional<Event> findByIdAndTenantIdAndDeletedFalse(String id, String tenantId);
     Optional<Event> findBySlugAndTenantId(String slug, String tenantId);
     boolean existsBySlugAndTenantId(String slug, String tenantId);
 }
