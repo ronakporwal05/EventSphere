@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Calendar, Clock, MapPin, User, ArrowUpRight } from 'lucide-react';
+import { getCurrentCalendarWindow } from '@/lib/calendar-utils';
 
 interface SessionItem {
   id: string;
@@ -172,15 +173,24 @@ interface ConferioScheduleSectionProps {
 }
 
 export const ConferioScheduleSection: React.FC<ConferioScheduleSectionProps> = ({ onSessionSelect }) => {
-  const [selectedDay, setSelectedDay] = useState<string>('2026-01-22');
+  const calendar = getCurrentCalendarWindow();
+  const [selectedDay, setSelectedDay] = useState<string>(calendar.day1Iso);
 
   const days = [
-    { key: '2026-01-22', label: '22 JAN, 2026', title: 'Day 1: AI & Systems' },
-    { key: '2026-01-23', label: '23 JAN, 2026', title: 'Day 2: Architecture & Security' },
-    { key: '2026-01-24', label: '24 JAN, 2026', title: 'Day 3: Pitch & Gala' },
+    { key: calendar.day1Iso, label: `${calendar.day1Label.replace('Day 1 • ', '')}, ${calendar.currentYear}`, title: 'Day 1: AI & Systems' },
+    { key: calendar.day2Iso, label: `${calendar.day2Label.replace('Day 2 • ', '')}, ${calendar.currentYear}`, title: 'Day 2: Architecture & Security' },
+    { key: calendar.day3Iso, label: `${calendar.day3Label.replace('Day 3 • ', '')}, ${calendar.currentYear}`, title: 'Day 3: Pitch & Gala' },
   ];
 
-  const currentSessions = SCHEDULE_DATA[selectedDay] || [];
+  // Map dynamic calendar day to static session tracks
+  const sessionDayMap: Record<string, string> = {
+    [calendar.day1Iso]: '2026-01-22',
+    [calendar.day2Iso]: '2026-01-23',
+    [calendar.day3Iso]: '2026-01-24',
+  };
+
+  const scheduleKey = sessionDayMap[selectedDay] || '2026-01-22';
+  const currentSessions = SCHEDULE_DATA[scheduleKey] || SCHEDULE_DATA['2026-01-22'] || [];
 
   return (
     <section id="schedule" className="relative w-full bg-[#fbfbf9] text-black py-24 px-4 sm:px-6 lg:px-8 border-b-2 border-black">

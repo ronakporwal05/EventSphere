@@ -20,15 +20,18 @@ import { InteractiveSeatMap, SelectedSeat } from '@/features/tickets/components/
 import { EventbriteCardData } from '@/features/eventbrite/components/EventbriteCard';
 import { ClerkAuthModal, AuthModalMode } from '@/features/auth/components/ClerkAuthModal';
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
+import { getCurrentCalendarWindow } from '@/lib/calendar-utils';
 import { toast } from 'sonner';
+
+const calendar = getCurrentCalendarWindow();
 
 // Flagship Event details for booking & payment flow
 const FLAGSHIP_EVENT: EventbriteCardData = {
   id: 'evt-global-2026',
-  title: 'Innovators Connect Live 2026: Multi-Tenant AI & Cloud Summit',
+  title: 'Innovators Connect Live: Multi-Tenant AI & Cloud Summit',
   description: 'Three days of visionary keynotes, hands-on ML workshops, algorithmic dynamic pricing simulations, and venture networking.',
   category: 'Technology & AI',
-  startDate: 'Wed, Jan 22, 2026 • 09:30 AM IST',
+  startDate: `${calendar.day1Weekday}, ${calendar.startDateFormatted}, ${calendar.currentYear} • 09:30 AM IST`,
   location: 'KTPO Trade Center, Whitefield, Bengaluru',
   city: 'Bengaluru',
   venueName: 'KTPO Grand Auditorium',

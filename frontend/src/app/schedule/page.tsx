@@ -10,6 +10,7 @@ import { MyTicketsModal, ConfirmedPass } from '@/features/eventbrite/components/
 import { SavedLikesDrawer } from '@/features/eventbrite/components/SavedLikesDrawer';
 import { FLAGSHIP_EVENT } from '@/features/conferio/data/flagship';
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
+import { getCurrentCalendarWindow } from '@/lib/calendar-utils';
 import {
   Calendar,
   Clock,
@@ -303,11 +304,14 @@ export default function SchedulePage() {
         <div className="max-w-6xl mx-auto space-y-4">
           {/* Day Buttons */}
           <div className="flex flex-wrap items-center gap-3">
-            {[
-              { day: 1, label: 'DAY 1 // JAN 22', theme: 'AI & Autonomous Systems' },
-              { day: 2, label: 'DAY 2 // JAN 23', theme: 'Scale & Frontend Paradigms' },
-              { day: 3, label: 'DAY 3 // JAN 24', theme: 'Startup Gala & Hackathon' },
-            ].map((d) => (
+            {(() => {
+              const calendar = getCurrentCalendarWindow();
+              return [
+                { day: 1, label: `DAY 1 // ${calendar.day1Label.replace('Day 1 • ', '').toUpperCase()}`, theme: 'AI & Autonomous Systems' },
+                { day: 2, label: `DAY 2 // ${calendar.day2Label.replace('Day 2 • ', '').toUpperCase()}`, theme: 'Scale & Frontend Paradigms' },
+                { day: 3, label: `DAY 3 // ${calendar.day3Label.replace('Day 3 • ', '').toUpperCase()}`, theme: 'Startup Gala & Hackathon' },
+              ];
+            })().map((d) => (
               <button
                 key={d.day}
                 onClick={() => setSelectedDay(d.day)}

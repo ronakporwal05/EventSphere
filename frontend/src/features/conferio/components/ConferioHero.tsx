@@ -2,25 +2,29 @@
 
 import React, { useState, useEffect } from 'react';
 import { ArrowRight, MapPin } from 'lucide-react';
+import { getCurrentCalendarWindow } from '@/lib/calendar-utils';
 
 interface ConferioHeroProps {
   onBookSeatClick?: () => void;
 }
 
 export const ConferioHero: React.FC<ConferioHeroProps> = ({ onBookSeatClick }) => {
-  // Live countdown timer state (target date: Jan 22, 2026)
+  const [calendar, setCalendar] = useState(() => getCurrentCalendarWindow());
   const [timeLeft, setTimeLeft] = useState({
-    days: 140,
-    hours: 0,
-    minutes: 29,
-    seconds: 56,
+    days: 7,
+    hours: 14,
+    minutes: 32,
+    seconds: 45,
   });
 
   useEffect(() => {
-    // Dynamic countdown timer
-    const target = new Date('2026-01-22T09:00:00+05:30').getTime();
+    // Dynamic calendar window from current clock/system date
+    const currentWindow = getCurrentCalendarWindow();
+    setCalendar(currentWindow);
 
-    const interval = setInterval(() => {
+    const target = currentWindow.countdownTargetTime;
+
+    const updateCountdown = () => {
       const now = new Date().getTime();
       const difference = target - now;
 
@@ -32,9 +36,12 @@ export const ConferioHero: React.FC<ConferioHeroProps> = ({ onBookSeatClick }) =
           seconds: Math.floor((difference / 1000) % 60),
         });
       } else {
-        setTimeLeft({ days: 140, hours: 0, minutes: 29, seconds: 56 });
+        setTimeLeft({ days: 3, hours: 8, minutes: 45, seconds: 12 });
       }
-    }, 1000);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -60,7 +67,7 @@ export const ConferioHero: React.FC<ConferioHeroProps> = ({ onBookSeatClick }) =
             />
             <text className="text-[12px] font-black uppercase tracking-[0.25em]" fill="#000">
               <textPath href="#circlePath">
-                ★ 2026 EDITION ★ EVENT SPHERE AI ★
+                ★ {calendar.currentYear} EDITION ★ EVENT SPHERE AI ★
               </textPath>
             </text>
           </svg>
@@ -84,7 +91,7 @@ export const ConferioHero: React.FC<ConferioHeroProps> = ({ onBookSeatClick }) =
         <div className="relative inline-block transform rotate-2 hover:rotate-0 transition-transform mb-6">
           <div className="px-5 py-2 bg-[#f472b6] text-black font-black text-xs sm:text-sm uppercase tracking-wider border-2 border-black rounded-sm shadow-[3px_3px_0px_#000] flex items-center space-x-2">
             <MapPin className="w-3.5 h-3.5 stroke-[3]" />
-            <span>22-24 JAN 2026 • BENGALURU, INDIA</span>
+            <span>{calendar.heroDateBadgeText}</span>
           </div>
         </div>
 
