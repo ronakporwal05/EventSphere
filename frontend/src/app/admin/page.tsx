@@ -129,28 +129,24 @@ export default function PlatformAdminPage() {
         <ConferioTicker />
         <ConferioNavbar />
         <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-lg w-full bg-white border-4 border-black rounded-3xl p-8 sm:p-10 shadow-[8px_8px_0px_#000] text-center space-y-6">
+          <div className="max-w-xl w-full bg-white border-4 border-black rounded-3xl p-8 sm:p-10 shadow-[8px_8px_0px_#000] text-center space-y-6">
             <div className="w-16 h-16 mx-auto bg-purple-100 border-2 border-black rounded-2xl flex items-center justify-center text-purple-700 shadow-[3px_3px_0px_#000]">
-              <Lock className="w-8 h-8 stroke-[2.5]" />
+              <Crown className="w-8 h-8 stroke-[2.5]" />
             </div>
             <div>
               <span className="px-3 py-1 bg-black text-[#f5ce32] text-xs font-black uppercase rounded-sm border border-black shadow-[2px_2px_0px_#fff]">
-                LEVEL 3 GOVERNANCE RESTRICTION
+                SYSTEM GOVERNANCE
               </span>
               <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black mt-3">
-                ADMIN ACCESS ONLY
+                MULTI-TENANT ADMIN CONSOLE
               </h2>
               <p className="text-xs sm:text-sm font-bold text-neutral-600 mt-2">
-                The Multi-Tenant Admin Console requires Supreme Admin authority. Current role:{' '}
-                <span className="font-mono text-purple-700 uppercase">
-                  {user ? resolveHierarchyRole(user.role) : 'UNAUTHENTICATED GUEST'}
-                </span>
-                .
+                This console is reserved for platform administrators overseeing global tenant schemas, infrastructure telemetry, and multi-tenant billing.
               </p>
             </div>
             <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-2xl space-y-2">
               <span className="text-[10px] font-black uppercase text-purple-900 block">
-                ⚡ 1-Click Elevate to Supreme Admin:
+                Reviewer / Evaluator Access:
               </span>
               <button
                 onClick={() => {
@@ -160,15 +156,18 @@ export default function PlatformAdminPage() {
                 className="w-full py-3 bg-purple-700 hover:bg-purple-800 text-white border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center justify-center space-x-2"
               >
                 <Crown className="w-4 h-4 text-yellow-300" />
-                <span>Elevate to Admin Account</span>
+                <span>Switch to Demo Admin Session</span>
               </button>
             </div>
-            <Link
-              href="/"
-              className="inline-block text-xs font-black uppercase underline hover:text-purple-700"
-            >
-              Return to Summit Home
-            </Link>
+            <div className="flex items-center justify-center space-x-4 pt-2 text-xs font-black uppercase">
+              <Link href="/manage" className="underline hover:text-purple-700">
+                Go to Organizer Cockpit
+              </Link>
+              <span className="text-neutral-400">•</span>
+              <Link href="/" className="underline hover:text-purple-700">
+                Exit to Public Site
+              </Link>
+            </div>
           </div>
         </main>
         <ConferioFooter />
@@ -183,6 +182,30 @@ export default function PlatformAdminPage() {
 
       {/* 2. Navbar */}
       <ConferioNavbar />
+
+      {/* 2.5 Admin Dedicated Navigation Strip */}
+      <div className="w-full bg-purple-950 text-white border-b-2 border-black px-4 sm:px-8 py-2 z-30 select-none">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center space-x-2">
+            <span className="px-2.5 py-0.5 bg-[#f5ce32] text-black rounded text-[10px] font-black uppercase tracking-wider border border-black">
+              SUPERADMIN WORKSPACE
+            </span>
+            <span className="text-xs font-bold text-purple-200">
+              Postgres Schema RLS & Cross-Tenant Telemetry
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-3 text-xs font-black uppercase">
+            <Link href="/manage" className="hover:text-[#f5ce32] transition-colors">
+              🏢 Organizer Cockpit
+            </Link>
+            <span className="text-purple-600">•</span>
+            <Link href="/" className="hover:text-[#f5ce32] transition-colors">
+              🌐 Public Site
+            </Link>
+          </div>
+        </div>
+      </div>
 
       {/* 3. Hero Header Strip */}
       <section className="bg-[#f5ce32] border-b-4 border-black px-4 sm:px-8 py-10 relative overflow-hidden">

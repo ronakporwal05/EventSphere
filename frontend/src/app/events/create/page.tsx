@@ -9,6 +9,8 @@ import { ConferioFooter } from '@/features/conferio/components/ConferioFooter';
 import { ClerkAuthModal, AuthModalMode } from '@/features/auth/components/ClerkAuthModal';
 import { useAuthStore } from '@/features/auth/hooks/useAuthStore';
 import { hasHierarchyAccess, resolveHierarchyRole } from '@/features/auth/utils/hierarchy';
+import { OrganizerWorkspaceBar } from '@/features/organizer/components/OrganizerWorkspaceBar';
+import { OrganizerAccessGate } from '@/features/organizer/components/OrganizerAccessGate';
 import {
   Sparkles,
   Calendar,
@@ -46,8 +48,8 @@ export default function CreateEventPage() {
   const [endDate, setEndDate] = useState('2026-03-22');
   const [capacity, setCapacity] = useState(1500);
   const [description, setDescription] = useState('');
-  const [generalPrice, setGeneralPrice] = useState(99);
-  const [vipPrice, setVipPrice] = useState(199);
+  const [generalPrice, setGeneralPrice] = useState(999);
+  const [vipPrice, setVipPrice] = useState(1999);
   const [imageUrl, setImageUrl] = useState(
     'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80'
   );
@@ -161,63 +163,28 @@ export default function CreateEventPage() {
     return (
       <div className="min-h-screen flex flex-col bg-[#fbfbf9] text-black font-sans selection:bg-black selection:text-[#f5ce32]">
         <ConferioTicker />
-        <ConferioNavbar />
-        <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-lg w-full bg-white border-4 border-black rounded-3xl p-8 sm:p-10 shadow-[8px_8px_0px_#000] text-center space-y-6">
-            <div className="w-16 h-16 mx-auto bg-amber-100 border-2 border-black rounded-2xl flex items-center justify-center text-amber-700 shadow-[3px_3px_0px_#000]">
-              <Lock className="w-8 h-8 stroke-[2.5]" />
-            </div>
-            <div>
-              <span className="px-3 py-1 bg-black text-[#f5ce32] text-xs font-black uppercase rounded-sm border border-black shadow-[2px_2px_0px_#fff]">
-                LEVEL 2 HIERARCHY RESTRICTION
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-black mt-3">
-                EVENT HOSTING RESTRICTED
-              </h2>
-              <p className="text-xs sm:text-sm font-bold text-neutral-600 mt-2">
-                Event creation requires Event Manager or Admin authorization. Current role:{' '}
-                <span className="font-mono text-amber-700 uppercase">
-                  {user ? resolveHierarchyRole(user.role) : 'UNAUTHENTICATED GUEST'}
-                </span>
-                .
-              </p>
-            </div>
-            <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl space-y-2.5">
-              <span className="text-[10px] font-black uppercase text-amber-900 block">
-                ⚡ 1-Click Elevate Hierarchy Role:
-              </span>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    loginAsRole('EVENT_MANAGER');
-                    toast.success('Elevated session to 🏢 Event Manager!');
-                  }}
-                  className="py-2.5 px-3 bg-indigo-700 hover:bg-indigo-800 text-white border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center justify-center space-x-1.5"
-                >
-                  <Briefcase className="w-3.5 h-3.5 text-blue-200" />
-                  <span>Event Manager</span>
-                </button>
-                <button
-                  onClick={() => {
-                    loginAsRole('ADMIN');
-                    toast.success('Elevated session to 👑 Supreme Admin!');
-                  }}
-                  className="py-2.5 px-3 bg-purple-700 hover:bg-purple-800 text-white border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center justify-center space-x-1.5"
-                >
-                  <Crown className="w-3.5 h-3.5 text-yellow-300" />
-                  <span>Admin</span>
-                </button>
-              </div>
-            </div>
-            <Link
-              href="/events"
-              className="inline-block text-xs font-black uppercase underline hover:text-indigo-700"
-            >
-              Browse Public Events Catalog Instead
-            </Link>
-          </div>
+        <ConferioNavbar
+          onOpenAuth={(mode) => {
+            setAuthModalMode(mode);
+            setIsAuthModalOpen(true);
+          }}
+        />
+        <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+          <OrganizerAccessGate
+            featureName="Summit Studio & Event Creator"
+            onOpenAuth={(mode) => {
+              setAuthModalMode(mode);
+              setIsAuthModalOpen(true);
+            }}
+          />
         </main>
         <ConferioFooter />
+        <ClerkAuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialMode={authModalMode}
+          onSuccess={() => setIsAuthModalOpen(false)}
+        />
       </div>
     );
   }
@@ -234,6 +201,9 @@ export default function CreateEventPage() {
           setIsAuthModalOpen(true);
         }}
       />
+
+      {/* 2.5 Organizer Dedicated Workspace Bar */}
+      <OrganizerWorkspaceBar activeTab="create" />
 
       {/* 3. Hero Header */}
       <section className="bg-[#f5ce32] border-b-4 border-black px-4 sm:px-8 py-12 relative">

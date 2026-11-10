@@ -50,7 +50,7 @@ export const ConferioFooter: React.FC = () => {
           {/* Col 2: Navigation Links */}
           <div>
             <h4 className="text-xs font-black uppercase tracking-wider text-white mb-4">
-              Summit Pages
+              Explore Platform
             </h4>
             <ul className="space-y-2 text-xs font-medium text-neutral-400">
               <li>
@@ -59,8 +59,8 @@ export const ConferioFooter: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="hover:text-[#f5ce32] transition-colors">
-                  About & Manifesto
+                <Link href="/events" className="hover:text-[#f5ce32] transition-colors">
+                  Find Events Worldwide
                 </Link>
               </li>
               <li>
@@ -70,22 +70,22 @@ export const ConferioFooter: React.FC = () => {
               </li>
               <li>
                 <Link href="/speakers" className="hover:text-[#f5ce32] transition-colors">
-                  Keynote Speakers Roster
+                  Keynote Speakers
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="hover:text-[#f5ce32] transition-colors">
-                  Passes & Seat Map
+                <Link href="/pricing?tab=attendee" className="hover:text-[#f5ce32] transition-colors">
+                  Attendee Passes & Seat Map
                 </Link>
               </li>
               <li>
-                <Link href="/events" className="hover:text-[#f5ce32] transition-colors">
-                  Find Events Worldwide
+                <Link href="/about" className="hover:text-[#f5ce32] transition-colors">
+                  About & Manifesto
                 </Link>
               </li>
               <li>
                 <Link href="/venue" className="hover:text-[#f5ce32] transition-colors">
-                  Venue & Travel Logistics
+                  Venue & Transit Directions
                 </Link>
               </li>
             </ul>
@@ -94,32 +94,42 @@ export const ConferioFooter: React.FC = () => {
           {/* Col 3: Portal & Management */}
           <div>
             <h4 className="text-xs font-black uppercase tracking-wider text-white mb-4">
-              Organizer & Cockpit
+              Workspaces & Portals
             </h4>
             <ul className="space-y-2 text-xs font-medium text-neutral-400">
               <li>
-                <Link href="/events/create" className="hover:text-[#f5ce32] transition-colors">
-                  + Create New Event
+                <Link href="/portal" className="hover:text-[#f5ce32] transition-colors">
+                  🎟️ Attendee Pass Wallet
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing?tab=organizer" className="hover:text-[#f5ce32] transition-colors">
+                  🏢 Host an Event (Plans)
                 </Link>
               </li>
               <li>
                 <Link href="/manage" className="hover:text-[#f5ce32] transition-colors">
-                  Organizer Dashboard
+                  📊 Organizer Cockpit & Revenue
+                </Link>
+              </li>
+              <li>
+                <Link href="/events/create" className="hover:text-[#f5ce32] transition-colors">
+                  ➕ Create New Event
                 </Link>
               </li>
               <li>
                 <Link href="/scanner" className="hover:text-[#f5ce32] transition-colors">
-                  Turnstile QR Scanner
+                  📱 Turnstile QR Scanner
                 </Link>
               </li>
               <li>
                 <Link href="/ai-studio" className="hover:text-[#f5ce32] transition-colors">
-                  Predictive AI Studio
+                  🤖 Predictive AI Studio
                 </Link>
               </li>
               <li>
                 <Link href="/admin" className="hover:text-[#f5ce32] transition-colors">
-                  Organization Administration
+                  👑 Multi-Tenant Admin
                 </Link>
               </li>
             </ul>

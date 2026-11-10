@@ -148,7 +148,7 @@ export default function PublicPortalPage() {
 
           <div className="flex flex-wrap gap-2.5 shrink-0">
             <Link
-              href="/pricing"
+              href="/pricing?tab=attendee"
               className="px-4 py-2 bg-black hover:bg-neutral-800 text-[#f5ce32] border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#fff]"
             >
               Get More Passes
