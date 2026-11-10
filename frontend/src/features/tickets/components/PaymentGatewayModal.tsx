@@ -35,8 +35,12 @@ interface PaymentGatewayModalProps {
   eventTitle: string;
   tierName: string;
   price: number;
+  unitPrice?: number;
+  quantity?: number;
   ticketTypeId?: string;
   seatInfo?: string;
+  isOrganizerSubscription?: boolean;
+  billingCycle?: 'monthly' | 'annual';
   initialRemainingSeconds?: number;
   onPaymentSuccess: (ticketData?: any) => void;
 }
@@ -62,8 +66,12 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   eventTitle,
   tierName,
   price,
+  unitPrice,
+  quantity,
   ticketTypeId = 'tier-vip-01',
   seatInfo,
+  isOrganizerSubscription = false,
+  billingCycle = 'monthly',
   initialRemainingSeconds = 600,
   onPaymentSuccess,
 }) => {
@@ -124,23 +132,44 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
     return () => clearInterval(interval);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  // --- Accurate Multi-Seat / Ticket Price Calculation Engine ---
+  const seatsArray = seatInfo ? seatInfo.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const effectiveQuantity = quantity && quantity > 0
+    ? quantity
+    : seatsArray.length > 0
+    ? seatsArray.length
+    : 1;
 
-  // Calculate pricing with coupons
+  // Determine single unit price and subtotal
+  const effectiveUnitPrice = unitPrice && unitPrice > 0
+    ? unitPrice
+    : (price > 0 && effectiveQuantity > 1 && price % effectiveQuantity === 0)
+    ? price / effectiveQuantity
+    : price;
+
+  const calculatedSubtotal = unitPrice && unitPrice > 0
+    ? unitPrice * effectiveQuantity
+    : (effectiveQuantity > 1 && price === effectiveUnitPrice)
+    ? effectiveUnitPrice * effectiveQuantity
+    : price;
+
+  // Calculate pricing with promo coupons
   let discountAmount = 0;
   if (appliedDiscount) {
     if (appliedDiscount.percent > 0) {
-      discountAmount = Math.round((price * appliedDiscount.percent) / 100);
+      discountAmount = Math.round((calculatedSubtotal * appliedDiscount.percent) / 100);
     } else if (appliedDiscount.flat > 0) {
-      discountAmount = Math.min(price, appliedDiscount.flat);
+      discountAmount = Math.min(calculatedSubtotal, appliedDiscount.flat);
     }
   }
-  const finalPayable = Math.max(0, price - discountAmount);
+  const finalPayable = Math.max(0, calculatedSubtotal - discountAmount);
 
   // GST Breakdown (18% inclusive)
   const basePrice = Math.round(finalPayable / 1.18);
   const cgst = Math.round((finalPayable - basePrice) / 2);
   const sgst = finalPayable - basePrice - cgst;
+
+  if (!isOpen) return null;
 
   // Apply Promo Coupon
   const handleApplyCoupon = () => {
@@ -226,6 +255,29 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
         handler: async function (response: any) {
           try {
             toast.loading('Verifying Razorpay payment signature...');
+
+            if (isOrganizerSubscription) {
+              const subData = {
+                planId: ticketTypeId,
+                planName: tierName,
+                billingCycle,
+                amount: finalPayable,
+                status: 'ACTIVE',
+                activatedAt: new Date().toISOString(),
+                subscriberEmail: attendeeEmail,
+                subscriberName: attendeeName,
+              };
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('eventsphere_organizer_subscription', JSON.stringify(subData));
+                window.dispatchEvent(new Event('eventsphere_sub_updated'));
+              }
+              useAuthStore.getState().loginAsRole('EVENT_MANAGER');
+              toast.dismiss();
+              toast.success(`Organizer Subscription Activated: ${tierName}!`);
+              onPaymentSuccess(subData);
+              return;
+            }
+
             let ticketData: any = null;
 
             try {
@@ -259,6 +311,9 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             toast.success(`Payment verified via Razorpay! Pass: ${ticketData.ticketNumber}`);
             onPaymentSuccess({
               ...ticketData,
+              quantity: effectiveQuantity,
+              unitPrice: effectiveUnitPrice,
+              totalAmount: finalPayable,
               gstin: needGstInvoice ? gstin : undefined,
               companyName: needGstInvoice ? companyName : undefined,
               seatInfo,
@@ -296,6 +351,27 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
   const handleSandboxAuthorize = async () => {
     setIsProcessing(true);
     try {
+      if (isOrganizerSubscription) {
+        const subData = {
+          planId: ticketTypeId,
+          planName: tierName,
+          billingCycle,
+          amount: finalPayable,
+          status: 'ACTIVE',
+          activatedAt: new Date().toISOString(),
+          subscriberEmail: attendeeEmail,
+          subscriberName: attendeeName,
+        };
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('eventsphere_organizer_subscription', JSON.stringify(subData));
+          window.dispatchEvent(new Event('eventsphere_sub_updated'));
+        }
+        useAuthStore.getState().loginAsRole('EVENT_MANAGER');
+        toast.success(`Organizer Subscription Activated: ${tierName}!`);
+        onPaymentSuccess(subData);
+        return;
+      }
+
       let ticketData: any = null;
 
       try {
@@ -339,6 +415,9 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
       toast.success(`Payment authorized & verified! Ticket: ${ticketData.ticketNumber}`);
       onPaymentSuccess({
         ...ticketData,
+        quantity: effectiveQuantity,
+        unitPrice: effectiveUnitPrice,
+        totalAmount: finalPayable,
         gstin: needGstInvoice ? gstin : undefined,
         companyName: needGstInvoice ? companyName : undefined,
         seatInfo,
@@ -376,12 +455,18 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-sm font-bold text-white tracking-tight">Razorpay & UPI Gateway</h3>
+                <h3 className="text-sm font-bold text-white tracking-tight">
+                  {isOrganizerSubscription ? 'Organizer Subscription Checkout' : 'Event Pass & Seat Checkout'}
+                </h3>
                 <span className="px-1.5 py-0.2 text-[8px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded uppercase">
-                  GST & UPI 2.0
+                  {isOrganizerSubscription ? 'SaaS Plan' : 'Attendee Ticket'}
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400">Official Checkout • Split Bill • Corporate Invoicing</p>
+              <p className="text-[11px] text-neutral-400">
+                {isOrganizerSubscription
+                  ? `EventSphere AI Host License • ${billingCycle === 'annual' ? 'Billed Annually (20% Off)' : 'Billed Monthly'}`
+                  : 'Official Razorpay & UPI Gateway • Instant Verified Pass'}
+              </p>
             </div>
           </div>
 
@@ -406,37 +491,60 @@ export const PaymentGatewayModal: React.FC<PaymentGatewayModalProps> = ({
 
         {/* Scrollable Main Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
-          {/* Order Summary Strip */}
-          <div className="p-3.5 bg-neutral-950/70 border border-neutral-800 rounded-2xl flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-white text-sm">{tierName}</span>
-                {seatInfo && (
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
-                    {seatInfo}
+          {/* Order Summary Strip with Transparent Calculations */}
+          <div className="p-3.5 bg-neutral-950/70 border border-neutral-800 rounded-2xl flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-white text-sm">{tierName}</span>
+                  {!isOrganizerSubscription && (
+                    <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-mono font-bold">
+                      {effectiveQuantity} {effectiveQuantity === 1 ? 'Pass' : 'Passes'}
+                    </span>
+                  )}
+                  {seatInfo && (
+                    <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-mono font-bold">
+                      Seats: {seatInfo}
+                    </span>
+                  )}
+                </div>
+                <span className="text-neutral-400 text-[11px] block truncate max-w-xs">{eventTitle}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-neutral-400 text-[10px] uppercase font-bold block">Payable Amount</span>
+                <div className="flex items-baseline gap-1.5 justify-end">
+                  {appliedDiscount && (
+                    <span className="text-xs line-through text-neutral-500 font-mono">
+                      ₹{calculatedSubtotal.toLocaleString('en-IN')}
+                    </span>
+                  )}
+                  <span className="text-lg font-bold font-mono text-emerald-400">
+                    ₹{finalPayable.toLocaleString('en-IN')}
                   </span>
-                )}
-              </div>
-              <span className="text-neutral-400 text-[11px] block truncate max-w-xs">{eventTitle}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-neutral-400 text-[10px] uppercase font-bold block">Payable Amount</span>
-              <div className="flex items-baseline gap-1.5 justify-end">
-                {appliedDiscount && (
-                  <span className="text-xs line-through text-neutral-500 font-mono">₹{price}</span>
-                )}
-                <span className="text-lg font-bold font-mono text-emerald-400">
-                  ₹{finalPayable.toLocaleString('en-IN')}
-                </span>
+                </div>
               </div>
             </div>
+
+            {/* Price Breakdown Details */}
+            {!isOrganizerSubscription && effectiveQuantity > 1 && (
+              <div className="pt-2 border-t border-neutral-800/80 flex items-center justify-between text-[11px] text-neutral-400 font-mono">
+                <span>Pass Breakdown ({effectiveQuantity} × ₹{effectiveUnitPrice.toLocaleString('en-IN')}):</span>
+                <span className="text-neutral-200 font-bold">₹{calculatedSubtotal.toLocaleString('en-IN')}</span>
+              </div>
+            )}
+            {appliedDiscount && (
+              <div className="pt-1 flex items-center justify-between text-[11px] text-emerald-400 font-mono">
+                <span>Promo Discount ({appliedDiscount.code}):</span>
+                <span>-₹{discountAmount.toLocaleString('en-IN')}</span>
+              </div>
+            )}
           </div>
 
-          {/* Attendee Details Form */}
+          {/* Attendee / Subscriber Details Form */}
           <div className="p-3 bg-neutral-950/50 border border-neutral-800 rounded-2xl space-y-2">
             <span className="text-[11px] font-bold text-neutral-300 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-amber-400" />
-              <span>Attendee Pass Details</span>
+              <span>{isOrganizerSubscription ? 'Organizer Account Details' : 'Attendee Pass Details'}</span>
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>

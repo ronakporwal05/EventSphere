@@ -16,6 +16,8 @@ interface InteractiveSeatMapProps {
   isOpen: boolean;
   onClose: () => void;
   eventTitle: string;
+  basePrice?: number;
+  tierName?: string;
   onConfirmSeats: (seats: SelectedSeat[]) => void;
 }
 
@@ -23,6 +25,8 @@ export const InteractiveSeatMap: React.FC<InteractiveSeatMapProps> = ({
   isOpen,
   onClose,
   eventTitle,
+  basePrice,
+  tierName,
   onConfirmSeats,
 }) => {
   const [selectedSeats, setSelectedSeats] = useState<SelectedSeat[]>([]);
@@ -37,20 +41,20 @@ export const InteractiveSeatMap: React.FC<InteractiveSeatMapProps> = ({
   ]);
 
   const rows = [
-    { row: 'A', tier: 'Diamond VIP' as const, price: 3499 },
-    { row: 'B', tier: 'Diamond VIP' as const, price: 3499 },
-    { row: 'C', tier: 'Diamond VIP' as const, price: 3499 },
-    { row: 'D', tier: 'Gold Executive' as const, price: 1999 },
-    { row: 'E', tier: 'Gold Executive' as const, price: 1999 },
-    { row: 'F', tier: 'Gold Executive' as const, price: 1999 },
-    { row: 'G', tier: 'Gold Executive' as const, price: 1999 },
-    { row: 'H', tier: 'Gold Executive' as const, price: 1999 },
-    { row: 'I', tier: 'Silver General' as const, price: 1499 },
-    { row: 'J', tier: 'Silver General' as const, price: 1499 },
-    { row: 'K', tier: 'Silver General' as const, price: 1499 },
-    { row: 'L', tier: 'Silver General' as const, price: 1499 },
-    { row: 'M', tier: 'Silver General' as const, price: 1499 },
-    { row: 'N', tier: 'Silver General' as const, price: 1499 },
+    { row: 'A', tier: 'Diamond VIP' as const, price: basePrice || 3499 },
+    { row: 'B', tier: 'Diamond VIP' as const, price: basePrice || 3499 },
+    { row: 'C', tier: 'Diamond VIP' as const, price: basePrice || 3499 },
+    { row: 'D', tier: 'Gold Executive' as const, price: basePrice || 1999 },
+    { row: 'E', tier: 'Gold Executive' as const, price: basePrice || 1999 },
+    { row: 'F', tier: 'Gold Executive' as const, price: basePrice || 1999 },
+    { row: 'G', tier: 'Gold Executive' as const, price: basePrice || 1999 },
+    { row: 'H', tier: 'Gold Executive' as const, price: basePrice || 1999 },
+    { row: 'I', tier: 'Silver General' as const, price: basePrice || 1499 },
+    { row: 'J', tier: 'Silver General' as const, price: basePrice || 1499 },
+    { row: 'K', tier: 'Silver General' as const, price: basePrice || 1499 },
+    { row: 'L', tier: 'Silver General' as const, price: basePrice || 1499 },
+    { row: 'M', tier: 'Silver General' as const, price: basePrice || 1499 },
+    { row: 'N', tier: 'Silver General' as const, price: basePrice || 1499 },
   ];
 
   const totalSeatsPerRow = 12;

@@ -109,6 +109,8 @@ export default function EventSphereHomePage() {
   // Active booking context
   const [activeBookingEvent, setActiveBookingEvent] = useState<EventbriteCardData>(FLAGSHIP_EVENT);
   const [selectedSeatString, setSelectedSeatString] = useState<string | undefined>('A-14');
+  const [bookingTotalPrice, setBookingTotalPrice] = useState<number>(1999);
+  const [bookingQuantity, setBookingQuantity] = useState<number>(1);
 
   // Persist likes to localStorage
   useEffect(() => {
@@ -197,6 +199,8 @@ export default function EventSphereHomePage() {
         title: `Innovators Connect 2026 (${tier.name})`,
       };
       setActiveBookingEvent(eventWithTier);
+      setBookingTotalPrice(tier.price);
+      setBookingQuantity(1);
       setIsSeatMapOpen(true);
     }, `Sign in to customize your seat and complete pass booking for ${tier.name}.`);
   };
@@ -205,12 +209,17 @@ export default function EventSphereHomePage() {
   const handleConfirmSeats = (seats: SelectedSeat[]) => {
     setIsSeatMapOpen(false);
     if (seats.length > 0) {
-      const seatNames = seats.map((s) => `${s.row}-${s.number}`).join(', ');
+      const seatNames = seats.map((s) => s.id || `${s.row}-${s.number}`).join(', ');
+      const totalAmount = seats.reduce((acc, s) => acc + s.price, 0);
       setSelectedSeatString(seatNames);
+      setBookingQuantity(seats.length);
+      setBookingTotalPrice(totalAmount);
       setIsPaymentModalOpen(true);
-      toast.success(`Selected seat: ${seatNames}. Preparing secure payment...`);
+      toast.success(`Selected ${seats.length} seat(s): ${seatNames} (Total: ₹${totalAmount.toLocaleString('en-IN')}). Loading payment...`);
     } else {
       setSelectedSeatString(undefined);
+      setBookingQuantity(1);
+      setBookingTotalPrice(activeBookingEvent.price);
       setIsPaymentModalOpen(true);
     }
   };
@@ -224,9 +233,9 @@ export default function EventSphereHomePage() {
       eventTitle: activeBookingEvent.title,
       date: activeBookingEvent.startDate,
       location: activeBookingEvent.location,
-      tier: selectedSeatString ? 'Reserved Seating' : 'General Pass',
+      tier: selectedSeatString ? `Reserved Seating (${bookingQuantity} Pass${bookingQuantity > 1 ? 'es' : ''})` : 'General Pass',
       seat: selectedSeatString || 'General Hall',
-      price: activeBookingEvent.price,
+      price: bookingTotalPrice,
       status: 'CONFIRMED',
     };
     setMyTickets((prev) => [newPass, ...prev]);
@@ -307,6 +316,7 @@ export default function EventSphereHomePage() {
           isOpen={isSeatMapOpen}
           onClose={() => setIsSeatMapOpen(false)}
           eventTitle={activeBookingEvent.title}
+          basePrice={activeBookingEvent.price}
           onConfirmSeats={handleConfirmSeats}
         />
       )}
@@ -317,8 +327,10 @@ export default function EventSphereHomePage() {
           isOpen={isPaymentModalOpen}
           onClose={() => setIsPaymentModalOpen(false)}
           eventTitle={activeBookingEvent.title}
-          tierName="Pro All-Access Pass"
-          price={activeBookingEvent.price}
+          tierName={activeBookingEvent.title.includes('(') ? activeBookingEvent.title.split('(')[1].replace(')', '') : 'Event Pass'}
+          price={bookingTotalPrice}
+          unitPrice={activeBookingEvent.price}
+          quantity={bookingQuantity}
           ticketTypeId="tier-vip-01"
           seatInfo={selectedSeatString}
           onPaymentSuccess={handlePaymentSuccess}

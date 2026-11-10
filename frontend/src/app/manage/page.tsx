@@ -143,6 +143,38 @@ export default function OrganizerDashboardPage() {
   // Hosted custom events
   const [customEvents, setCustomEvents] = useState<CustomEventItem[]>([]);
 
+  // Organizer Subscription State
+  const [organizerSub, setOrganizerSub] = useState<{
+    planName: string;
+    price: number;
+    billingCycle?: string;
+    status: string;
+    subscribedAt?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const loadSub = () => {
+      try {
+        const stored = localStorage.getItem('eventsphere_organizer_subscription');
+        if (stored) {
+          setOrganizerSub(JSON.parse(stored));
+        } else {
+          setOrganizerSub({
+            planName: 'Starter Host',
+            price: 0,
+            billingCycle: 'monthly',
+            status: 'ACTIVE',
+          });
+        }
+      } catch {
+        setOrganizerSub(null);
+      }
+    };
+    loadSub();
+    window.addEventListener('eventsphere_sub_updated', loadSub);
+    return () => window.removeEventListener('eventsphere_sub_updated', loadSub);
+  }, []);
+
   useEffect(() => {
     setCustomEvents(getCustomEvents());
 
@@ -359,6 +391,44 @@ export default function OrganizerDashboardPage() {
         </div>
       </section>
 
+      {/* Organizer Subscription Tier Status Strip */}
+      <section className="px-4 sm:px-8 max-w-6xl mx-auto w-full pt-8">
+        <div className="bg-gradient-to-r from-neutral-900 via-black to-neutral-900 text-white border-3 border-black rounded-3xl p-6 shadow-[6px_6px_0px_#f5ce32] flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#f5ce32] text-black border-2 border-black flex items-center justify-center shrink-0 shadow-[2px_2px_0px_#fff]">
+              <Crown className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-black uppercase tracking-wider text-[#f5ce32]">
+                  ORGANIZER LICENSE TIER
+                </span>
+                <span className="px-2 py-0.5 bg-emerald-400 text-black text-[10px] font-black uppercase rounded-full">
+                  {organizerSub?.status || 'ACTIVE'}
+                </span>
+              </div>
+              <h3 className="text-xl font-black uppercase tracking-tight text-white mt-0.5">
+                {organizerSub?.planName || 'Starter Host'} Plan
+                {organizerSub?.price ? ` • ₹${organizerSub.price.toLocaleString('en-IN')}/${organizerSub.billingCycle === 'annual' ? 'yr' : 'mo'}` : ' • Free Tier'}
+              </h3>
+              <p className="text-xs text-neutral-300 font-bold">
+                Multi-Tenant Turnstile Scanning, AI Copywriter & Automated Razorpay Settlement Active.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-3 shrink-0">
+            <Link
+              href="/pricing?tab=organizer"
+              className="px-4 py-2.5 bg-[#f5ce32] hover:bg-yellow-400 text-black border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#fff] hover:translate-x-[1px] hover:translate-y-[1px] transition-all flex items-center space-x-1.5"
+            >
+              <span>Upgrade Plan</span>
+              <ArrowRight className="w-4 h-4 stroke-[3]" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* 4. Live Brutalist KPI Cards */}
       <section className="py-10 px-4 sm:px-8 max-w-6xl mx-auto w-full">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -372,7 +442,7 @@ export default function OrganizerDashboardPage() {
                 <DollarSign className="w-4 h-4 text-black stroke-[2.5]" />
               </div>
             </div>
-            <p className="text-3xl font-black text-black tracking-tight leading-tight">$48,920.00</p>
+            <p className="text-3xl font-black text-black tracking-tight leading-tight">₹4,89,200</p>
             <div className="flex items-center space-x-1.5 text-[11px] font-black text-emerald-600 mt-2">
               <TrendingUp className="w-3.5 h-3.5" />
               <span>+14.8% vs Yesterday</span>

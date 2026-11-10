@@ -51,7 +51,7 @@ const INITIAL_PORTAL_PASSES: PassRecord[] = [
     location: 'ExCeL London Arena, UK',
     tier: 'VIP All-Access',
     seat: 'A-4 (Reserved Front Row)',
-    price: 159,
+    price: 1999,
     status: 'CONFIRMED',
   },
   {
@@ -62,7 +62,7 @@ const INITIAL_PORTAL_PASSES: PassRecord[] = [
     location: 'Whitefield Tech Center, Bengaluru',
     tier: 'Executive Delegate',
     seat: 'B-1 (Main Hall)',
-    price: 99,
+    price: 999,
     status: 'CONFIRMED',
   },
 ];
@@ -75,7 +75,9 @@ export default function PublicPortalPage() {
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isSeatMapOpen, setIsSeatMapOpen] = useState(false);
   const [selectedSeatString, setSelectedSeatString] = useState<string | undefined>('A-12');
-  const [selectedTier, setSelectedTier] = useState({ id: 'tier-vip-01', name: 'VIP All-Access', price: 159 });
+  const [selectedTier, setSelectedTier] = useState({ id: 'tier-vip-01', name: 'VIP All-Access', price: 1999 });
+  const [bookingTotalPrice, setBookingTotalPrice] = useState<number>(1999);
+  const [bookingQuantity, setBookingQuantity] = useState<number>(1);
 
   // Networking search
   const [networkSearch, setNetworkSearch] = useState('');
@@ -84,12 +86,17 @@ export default function PublicPortalPage() {
   const handleConfirmSeats = (seats: SelectedSeat[]) => {
     setIsSeatMapOpen(false);
     if (seats.length > 0) {
-      const seatNames = seats.map((s) => `${s.row}-${s.number}`).join(', ');
+      const seatNames = seats.map((s) => s.id || `${s.row}-${s.number}`).join(', ');
+      const totalAmount = seats.reduce((acc, s) => acc + s.price, 0);
       setSelectedSeatString(seatNames);
+      setBookingQuantity(seats.length);
+      setBookingTotalPrice(totalAmount);
       setIsBookingOpen(true);
-      toast.success(`Reserved seat: ${seatNames}. Preparing secure payment...`);
+      toast.success(`Selected ${seats.length} seat(s): ${seatNames} (Total: ₹${totalAmount.toLocaleString('en-IN')}). Loading payment...`);
     } else {
       setSelectedSeatString(undefined);
+      setBookingQuantity(1);
+      setBookingTotalPrice(selectedTier.price);
       setIsBookingOpen(true);
     }
   };
@@ -103,9 +110,9 @@ export default function PublicPortalPage() {
       eventTitle: 'Innovators Connect Live 2026',
       date: 'JAN 22 - 24, 2026',
       location: 'ExCeL London Arena, UK',
-      tier: selectedTier.name,
+      tier: selectedSeatString ? `${selectedTier.name} (${bookingQuantity} Pass${bookingQuantity > 1 ? 'es' : ''})` : selectedTier.name,
       seat: selectedSeatString || 'General Hall',
-      price: selectedTier.price,
+      price: bookingTotalPrice,
       status: 'CONFIRMED',
     };
     setPasses((prev) => [newPass, ...prev]);
@@ -277,9 +284,9 @@ export default function PublicPortalPage() {
           <div className="space-y-8 animate-in fade-in duration-200">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { id: 'tier-gen-02', name: 'Attendee Pass', price: 99, bg: 'bg-[#e5d4ff]', desc: 'Standard 3-Day Summit Admission' },
-                { id: 'tier-vip-01', name: 'VIP All-Access', price: 159, bg: 'bg-black text-white', desc: 'Premier Reserved Front Seating' },
-                { id: 'tier-dev-vip', name: 'Executive & Investor', price: 299, bg: 'bg-[#98d8ef]', desc: '1-on-1 Speaker Office Hours' },
+                { id: 'tier-gen-02', name: 'Attendee Pass', price: 999, bg: 'bg-[#e5d4ff]', desc: 'Standard 3-Day Summit Admission' },
+                { id: 'tier-vip-01', name: 'VIP All-Access', price: 1999, bg: 'bg-black text-white', desc: 'Premier Reserved Front Seating' },
+                { id: 'tier-dev-vip', name: 'Executive & Investor', price: 4999, bg: 'bg-[#98d8ef]', desc: '1-on-1 Speaker Office Hours' },
               ].map((tier, idx) => (
                 <div
                   key={idx}
@@ -290,12 +297,14 @@ export default function PublicPortalPage() {
                       {tier.name}
                     </h3>
                     <p className="text-xs font-bold mt-1 opacity-80">{tier.desc}</p>
-                    <p className="text-4xl font-black mt-4">${tier.price}</p>
+                    <p className="text-4xl font-black mt-4">₹{tier.price.toLocaleString('en-IN')}</p>
                   </div>
 
                   <button
                     onClick={() => {
                       setSelectedTier({ id: tier.id, name: tier.name, price: tier.price });
+                      setBookingTotalPrice(tier.price);
+                      setBookingQuantity(1);
                       setIsSeatMapOpen(true);
                     }}
                     className="w-full py-3 bg-[#f5ce32] hover:bg-yellow-400 text-black border-2 border-black rounded-xl font-black text-xs uppercase tracking-wider shadow-[3px_3px_0px_#000] flex items-center justify-center space-x-1.5"
@@ -422,6 +431,7 @@ export default function PublicPortalPage() {
         isOpen={isSeatMapOpen}
         onClose={() => setIsSeatMapOpen(false)}
         eventTitle="Event Sphere AI 2026 Summit"
+        basePrice={selectedTier.price}
         onConfirmSeats={handleConfirmSeats}
       />
 
@@ -431,7 +441,9 @@ export default function PublicPortalPage() {
         onClose={() => setIsBookingOpen(false)}
         eventTitle="Event Sphere AI 2026 Summit"
         tierName={selectedTier.name}
-        price={selectedTier.price}
+        price={bookingTotalPrice}
+        unitPrice={selectedTier.price}
+        quantity={bookingQuantity}
         ticketTypeId={selectedTier.id}
         seatInfo={selectedSeatString}
         onPaymentSuccess={handlePaymentSuccess}

@@ -150,8 +150,11 @@ export const ConferioNavbar: React.FC<ConferioNavbarProps> = ({
         <Link href="/speakers" className="hover:underline underline-offset-4 decoration-2 transition-all">
           Speakers
         </Link>
-        <Link href="/pricing" className="hover:underline underline-offset-4 decoration-2 transition-all">
-          Pricing
+        <Link href="/pricing?tab=attendee" className="hover:underline underline-offset-4 decoration-2 transition-all">
+          Tickets
+        </Link>
+        <Link href="/pricing?tab=organizer" className="hover:underline underline-offset-4 decoration-2 transition-all">
+          Organizer Plans
         </Link>
         <Link href="/events" className="hover:underline underline-offset-4 decoration-2 transition-all">
           Find Events
@@ -507,12 +510,20 @@ export const ConferioNavbar: React.FC<ConferioNavbarProps> = ({
               <ArrowRight className="w-3 h-3" />
             </Link>
             <Link
-              href="/pricing"
+              href="/pricing?tab=attendee"
               onClick={() => setIsMobileMenuOpen(false)}
               className="p-3 bg-black border-2 border-black rounded-xl text-[#f5ce32] shadow-[2px_2px_0px_#fff] flex items-center justify-between"
             >
-              <span>Passes & Pricing</span>
+              <span>🎟️ Buy Tickets</span>
               <ArrowRight className="w-3 h-3 text-[#f5ce32]" />
+            </Link>
+            <Link
+              href="/pricing?tab=organizer"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="p-3 bg-white border-2 border-black rounded-xl text-black shadow-[2px_2px_0px_#000] flex items-center justify-between"
+            >
+              <span>🏢 Organizer Plans</span>
+              <ArrowRight className="w-3 h-3 text-black" />
             </Link>
             <Link
               href="/events"

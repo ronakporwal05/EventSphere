@@ -98,9 +98,9 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
           coverImageUrl:
             'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=1200&q=80',
           ticketTiers: [
-            { id: 'tier-1', name: 'Attendee Pass', price: 99, capacity: 1500, available: 320 },
-            { id: 'tier-2', name: 'VIP All-Access', price: 159, capacity: 800, available: 60 },
-            { id: 'tier-3', name: 'Executive & Investor', price: 299, capacity: 200, available: 15 },
+            { id: 'tier-1', name: 'Attendee Pass', price: 999, capacity: 1500, available: 320 },
+            { id: 'tier-2', name: 'VIP All-Access', price: 1999, capacity: 800, available: 60 },
+            { id: 'tier-3', name: 'Executive & Investor', price: 4999, capacity: 200, available: 15 },
           ],
         } as any);
         setLoading(false);
@@ -155,7 +155,7 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               </button>
 
               <Link
-                href="/pricing"
+                href="/pricing?tab=attendee"
                 className="px-4 py-1.5 bg-black hover:bg-neutral-800 text-[#f5ce32] border-2 border-black rounded-xl text-xs font-black uppercase tracking-wider shadow-[2px_2px_0px_#fff]"
               >
                 Buy Tickets
@@ -339,13 +339,13 @@ export default function EventDetailPage({ params }: { params: Promise<{ id: stri
               >
                 <div>
                   <h4 className="text-xl font-black uppercase text-black">{t.name}</h4>
-                  <p className="text-3xl font-black text-black mt-2">${t.price}</p>
+                  <p className="text-3xl font-black text-black mt-2">₹{Number(t.price).toLocaleString('en-IN')}</p>
                   <p className="text-xs font-bold text-neutral-600 mt-1">
                     {t.available || 50} passes remaining
                   </p>
                 </div>
                 <Link
-                  href="/pricing"
+                  href="/pricing?tab=attendee"
                   className="w-full py-2.5 bg-black hover:bg-neutral-800 text-[#f5ce32] rounded-xl text-xs font-black uppercase text-center shadow-[2px_2px_0px_#f5ce32]"
                 >
                   Book This Tier

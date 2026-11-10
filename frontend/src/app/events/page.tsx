@@ -58,7 +58,7 @@ const EVENTS_CATALOG: EventCardItem[] = [
     startDate: 'Jan 22 - 24, 2026',
     dayBadge: '22',
     monthBadge: 'JAN',
-    price: 99,
+    price: 1999,
     capacity: 2500,
     attendeesCount: 2180,
     imageUrl: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?auto=format&fit=crop&w=800&q=80',
@@ -74,7 +74,7 @@ const EVENTS_CATALOG: EventCardItem[] = [
     startDate: 'Feb 15 - 16, 2026',
     dayBadge: '15',
     monthBadge: 'FEB',
-    price: 49,
+    price: 999,
     capacity: 1200,
     attendeesCount: 940,
     imageUrl: 'https://images.unsplash.com/photo-1591115765373-5207764f72e7?auto=format&fit=crop&w=800&q=80',
@@ -89,7 +89,7 @@ const EVENTS_CATALOG: EventCardItem[] = [
     startDate: 'Mar 08 - 10, 2026',
     dayBadge: '08',
     monthBadge: 'MAR',
-    price: 199,
+    price: 2499,
     capacity: 800,
     attendeesCount: 710,
     imageUrl: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=800&q=80',
@@ -105,7 +105,7 @@ const EVENTS_CATALOG: EventCardItem[] = [
     startDate: 'Apr 03 - 04, 2026',
     dayBadge: '03',
     monthBadge: 'APR',
-    price: 79,
+    price: 1499,
     capacity: 650,
     attendeesCount: 520,
     imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80',
@@ -120,7 +120,7 @@ const EVENTS_CATALOG: EventCardItem[] = [
     startDate: 'May 12 - 14, 2026',
     dayBadge: '12',
     monthBadge: 'MAY',
-    price: 120,
+    price: 1899,
     capacity: 1500,
     attendeesCount: 1100,
     imageUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=800&q=80',
@@ -170,6 +170,8 @@ export default function FindEventsPage() {
   const [isSeatMapOpen, setIsSeatMapOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedSeatString, setSelectedSeatString] = useState<string | undefined>();
+  const [bookingTotalPrice, setBookingTotalPrice] = useState<number>(0);
+  const [bookingQuantity, setBookingQuantity] = useState<number>(1);
 
   // Auth modal states
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -225,6 +227,9 @@ export default function FindEventsPage() {
   const handleBookEvent = (evt: EventCardItem) => {
     executeWithAuth(() => {
       setActiveBookingEvent(evt);
+      setBookingTotalPrice(evt.price);
+      setBookingQuantity(1);
+      setSelectedSeatString(undefined);
       setIsSeatMapOpen(true);
     }, `Sign in with Google to purchase tickets for ${evt.title}.`);
   };
@@ -232,13 +237,20 @@ export default function FindEventsPage() {
   // Confirm seat
   const handleConfirmSeats = (seats: SelectedSeat[]) => {
     setIsSeatMapOpen(false);
+    if (!activeBookingEvent) return;
+
     if (seats.length > 0) {
-      const seatNames = seats.map((s) => `${s.row}-${s.number}`).join(', ');
+      const seatNames = seats.map((s) => s.id || `${s.row}-${s.number}`).join(', ');
+      const totalAmount = seats.reduce((acc, s) => acc + s.price, 0);
       setSelectedSeatString(seatNames);
+      setBookingQuantity(seats.length);
+      setBookingTotalPrice(totalAmount);
       setIsPaymentModalOpen(true);
-      toast.success(`Selected seat: ${seatNames}. Loading payment...`);
+      toast.success(`Selected ${seats.length} seat(s): ${seatNames} (Total: ₹${totalAmount.toLocaleString('en-IN')}). Loading payment...`);
     } else {
       setSelectedSeatString(undefined);
+      setBookingQuantity(1);
+      setBookingTotalPrice(activeBookingEvent.price);
       setIsPaymentModalOpen(true);
     }
   };
@@ -254,9 +266,9 @@ export default function FindEventsPage() {
       eventTitle: activeBookingEvent.title,
       date: activeBookingEvent.startDate,
       location: activeBookingEvent.venue,
-      tier: 'General Pass',
+      tier: selectedSeatString ? `Reserved Seating (${bookingQuantity} Pass${bookingQuantity > 1 ? 'es' : ''})` : 'General Pass',
       seat: selectedSeatString || 'General Hall',
-      price: activeBookingEvent.price,
+      price: bookingTotalPrice,
       status: 'CONFIRMED',
     };
     setMyTickets((prev) => [newPass, ...prev]);
@@ -475,7 +487,7 @@ export default function FindEventsPage() {
 
                       {/* Price Pill */}
                       <div className="absolute bottom-3 right-3 px-2.5 py-0.5 bg-[#f5ce32] text-black rounded text-xs font-black uppercase border border-black shadow-[2px_2px_0px_#000] pointer-events-none">
-                        {event.price === 0 ? 'FREE' : `$${event.price}`}
+                        {event.price === 0 ? 'FREE' : `₹${event.price.toLocaleString('en-IN')}`}
                       </div>
                     </div>
 
@@ -542,11 +554,12 @@ export default function FindEventsPage() {
       />
 
       {/* Interactive Seat Map Modal */}
-      {activeBookingEvent && (
+      {isSeatMapOpen && activeBookingEvent && (
         <InteractiveSeatMap
           isOpen={isSeatMapOpen}
           onClose={() => setIsSeatMapOpen(false)}
           eventTitle={activeBookingEvent.title}
+          basePrice={activeBookingEvent.price}
           onConfirmSeats={handleConfirmSeats}
         />
       )}
@@ -558,7 +571,10 @@ export default function FindEventsPage() {
           onClose={() => setIsPaymentModalOpen(false)}
           eventTitle={activeBookingEvent.title}
           tierName="General Pass"
-          price={activeBookingEvent.price}
+          price={bookingTotalPrice}
+          unitPrice={activeBookingEvent.price}
+          quantity={bookingQuantity}
+          ticketTypeId="tier-general-01"
           seatInfo={selectedSeatString}
           onPaymentSuccess={handlePaymentSuccess}
         />
